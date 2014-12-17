@@ -1015,7 +1015,7 @@ function QueryableController($scope, $svc)
     $scope.query.service = $svc;
 }
 
-function CommonController($scope, $q, $location, $window, $routeParams, $shared) {
+function CommonController($scope, $q, $location, $window, $routeParams, $shared, $route) {
 
     //find first element with ng-scope (root element)
     var $rootElement = angular.element(document.querySelector('.ng-scope')), $injector = $rootElement.injector();
@@ -1043,6 +1043,18 @@ function CommonController($scope, $q, $location, $window, $routeParams, $shared)
      * @type {Object}
      */
     $scope.client = { route : ($routeParams || {}) };
+    //get static params (from $route)
+    if ($injector.has('$route'))
+        $route = $route || $injector.get('$route');
+    //set static current route
+    $scope.client.route.current = { };
+    if ($route) {
+        var $$route = $route.current.$$route;
+        if (typeof $$route !=='undefined' && $$route !==null) {
+            $scope.client.route.current = $$route;
+        }
+    }
+
     /**
      * Gets an object that represents the server parameters, if any.
      * @type {Object}
@@ -1076,14 +1088,36 @@ function CommonController($scope, $q, $location, $window, $routeParams, $shared)
 
 /**
  *
- * @param {*} $scope
- * @param {ClientDataService} $svc
+ * @param $scope
+ * @param $q
+ * @param $location
+ * @param $svc
+ * @param $window
+ * @param $shared
+ * @param $routeParams
  * @constructor
  */
 function DataController($scope, $q, $location, $svc, $window, $shared, $routeParams)
 {
+    //find first element with ng-scope (root element)
+    var $rootElement = angular.element(document.querySelector('.ng-scope')), $injector = $rootElement.injector();
+    if ($injector) {
+        //ensure application services
+        if ($injector.has('$q'))
+            $q = $q || $injector.get('$q');
+        if ($injector.has('$location'))
+            $location = $location || $injector.get('$location');
+        if ($injector.has('$window'))
+            $window = $window || $injector.get('$window');
+        if ($injector.has('$routeParams'))
+            $routeParams = $routeParams || $injector.get('$routeParams');
+        if ($injector.has('$shared'))
+            $shared = $shared || $injector.get('$shared');
+        if ($injector.has('$svc'))
+            $svc = $svc || $injector.get('$svc');
+    }
     //inherits CommonController
-    CommonController($scope, $q, $location, $window, $routeParams);
+    CommonController($scope);
     //inherits QueryableController
     QueryableController($scope, $svc);
 
@@ -1256,8 +1290,25 @@ function NoopController($scope, $rootScope)
 
 function ItemController($scope, $q, $location, $svc, $window, $shared, $routeParams)
 {
+    //find first element with ng-scope (root element)
+    var $rootElement = angular.element(document.querySelector('.ng-scope')), $injector = $rootElement.injector();
+    if ($injector) {
+        //ensure application services
+        if ($injector.has('$q'))
+            $q = $q || $injector.get('$q');
+        if ($injector.has('$location'))
+            $location = $location || $injector.get('$location');
+        if ($injector.has('$svc'))
+            $svc = $svc || $injector.get('$svc');
+        if ($injector.has('$window'))
+            $window = $window || $injector.get('$window');
+        if ($injector.has('$shared'))
+            $shared = $shared || $injector.get('$shared');
+        if ($injector.has('$routeParams'))
+            $routeParams = $routeParams || $injector.get('$routeParams');
+    }
     //inherits CommonController
-    CommonController($scope, $q, $location, $window, $routeParams);
+    CommonController($scope);
 
     $scope.broadcast = function(name, args) {
         if (typeof $shared === 'undefined')
@@ -1909,9 +1960,9 @@ most.factory('$svc', function ($http, $q) {
         return new MostSharedService($rootScope, $location, $routeParams);
     });
 //controllers
-most.controller('DataController', ['$scope', '$q', '$location', '$svc', '$window','$shared', '$routeParams', DataController])
-    .controller('ItemController', ['$scope', '$q', '$location', '$svc', '$window', '$shared', '$routeParams', ItemController])
-    .controller('CommonController', ['$scope', '$q', '$location', '$window', '$routeParams', CommonController]);
+most.controller('DataController', DataController)
+    .controller('ItemController', ItemController)
+    .controller('CommonController', CommonController);
 //directives
 most.directive('loc',MostLocalizedDirective)
     .directive('locHtml',MostLocalizedHtmlDirective)
