@@ -1015,8 +1015,29 @@ function QueryableController($scope, $svc)
     $scope.query.service = $svc;
 }
 
-function CommonController($scope, $q, $location, $window, $routeParams) {
+function CommonController($scope, $q, $location, $window, $routeParams, $shared) {
 
+    //find first element with ng-scope (root element)
+    var $rootElement = angular.element(document.querySelector('.ng-scope')), $injector = $rootElement.injector();
+    if ($injector) {
+        //ensure application services
+        if ($injector.has('$q'))
+            $q = $q || $injector.get('$q');
+        if ($injector.has('$location'))
+            $location = $location || $injector.get('$location');
+        if ($injector.has('$window'))
+            $window = $window || $injector.get('$window');
+        if ($injector.has('$routeParams'))
+            $routeParams = $routeParams || $injector.get('$routeParams');
+        if ($injector.has('$shared'))
+            $shared = $shared || $injector.get('$shared');
+    }
+    //register broadcast emitter
+    $scope.broadcast = function(name, args) {
+        if (typeof $shared === 'undefined')
+            return;
+        $shared.broadcast(name, args);
+    }
     /**
      * Gets an object that represents the client parameters, if any.
      * @type {Object}
