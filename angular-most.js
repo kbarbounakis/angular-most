@@ -255,6 +255,23 @@ ClientDataService.prototype.save = function(item, options, callback) {
     });
 };
 
+ClientDataService.prototype.new = function(item, options, callback) {
+    var $http = this.$http, $q = this.$q;
+    $http({
+        method: options.method || 'POST',
+        url: String.format("/%s/new.json", options.model),
+        data: angular.toParam(item, 'data'),  // pass in data as strings
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }  // set the headers so angular passing info as form data (not request payload)
+    }).success(function (data) {
+        callback(null, data);
+    }).error(function (err, status, headers) {
+        if (headers("X-Status-Description"))
+            callback(new Error(headers("X-Status-Description")));
+        else
+            callback(new Error(err));
+    });
+};
+
 ClientDataService.prototype.remove = function(item, options, callback) {
     var $http = this.$http;
     $http({
@@ -526,6 +543,26 @@ ClientDataQueryable.prototype.model = function(name) {
         this.$model = name;
     return this;
 }
+/**
+ *
+ * @param {Boolean=|*=} value
+ * @returns {ClientDataQueryable}
+ */
+ClientDataQueryable.prototype.inlineCount = function(value) {
+    if (typeof value === 'undefined')
+        this.$inlinecount = true;
+    else
+        this.$inlinecount = value;
+    return this;
+};
+/**
+ *
+ * @param {boolean=|*=} value
+ * @returns {ClientDataQueryable}
+ */
+ClientDataQueryable.prototype.paged = function(value) {
+    return this.inlineCount(value);
+};
 
 /**
  * @param {Boolean} value
@@ -1338,6 +1375,22 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
                             params[key]=$scope.server.route[key];
                     }
 
+                    var resolveAssociatedObject = function(mapping, associatedValue) {
+                        var q = new ClientDataQueryable(mapping.parentModel);
+                        q.service = $svc;
+                        var deferred = $q.defer();
+                        //store property name to deferred
+                        $scope.item[mapping.childField] = deferred.promise;
+                        q.where(mapping.parentField).equal(associatedValue).item.then(function(result) {
+                            $scope.item[mapping.childField]=result;
+                            deferred.resolve(result);
+                        }, function(reason) {
+                            $scope.item[mapping.childField]=null;
+                            deferred.resolve(null);
+                            console.log('Failed to get associated object with reason:' + reason);
+                        });
+                    }
+
                     for(var key in params) {
                         if (params.hasOwnProperty(key)) {
                             //check if this property belongs to target schema
@@ -1351,16 +1404,8 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
                                         }
                                         else {
                                             //query associated model
-                                            if (attr.mapping.associationType==='association') {
-                                                var q = new ClientDataQueryable(attr.mapping.parentModel), name=key;
-                                                q.service = $svc;
-                                                $scope.item[name] = $q.defer().promise;
-                                                q.where(attr.mapping.parentField).equal(value).item.then(function(result) {
-                                                    $scope.item[name]=result;
-                                                }, function(reason) {
-                                                    $scope.item[name]=null;
-                                                    console.log('Failed to get associated object with reason:' + reason);
-                                                });
+                                            if (attr.mapping.associationType==='association' && attr.mapping.childModel === $scope.model) {
+                                                resolveAssociatedObject(attr.mapping, value);
                                             }
                                         }
                                     }
@@ -1439,6 +1484,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
             }
         });
     };
+
 
     $scope.save = function(callback) {
         callback = callback || function() {};
