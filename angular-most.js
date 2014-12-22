@@ -1701,7 +1701,7 @@ function MostStringDirective($compile) {
 function MostTypeaheadDirective($compile, $svc) {
     return {
         restrict: 'E',
-        templateUrl:'/templates/directives/typeahead.html',
+        template:'<div><label loc-html></label><input autocomplete="off"  typeahead-editable="false" type="text" class="form-control"/></div>',
         replace:true,
         compile: function compile(tElement, tAttrs) {
             return function (scope, iElement, iAttrs) {
@@ -1719,7 +1719,14 @@ function MostTypeaheadDirective($compile, $svc) {
                 });
                 //set typeahead properties
                 var field = iAttrs['field'], dataFilter=null;
-                $input.attr("typeahead", angular.format('x as x.%s for x in %s($viewValue)', field, dataName));
+                var typeaheadAttr = angular.format('x as x.%s for x in %s($viewValue)', field, dataName);
+                var limit = parseInt(iAttrs['limit']) || 10;
+                //set typeahead attribute
+                $input.attr("typeahead", typeaheadAttr);
+                //set typeahead-on-select attribute
+                if (iAttrs['onselect']) {
+                    $input.attr("typeahead-on-select", iAttrs['onselect']);
+                }
                 if (iAttrs['search']) {
                     var search = iAttrs['search'].split(',');
                     for (var i = 0; i < search.length; i++) {
@@ -1731,6 +1738,7 @@ function MostTypeaheadDirective($compile, $svc) {
                 else {
                     dataFilter = angular.format("indexof(%s,'%s') gt 0", field);
                 }
+
                 //set scope get function
                 scope.route = window.route;
                 scope[dataName] = function(filter) {
@@ -1738,7 +1746,7 @@ function MostTypeaheadDirective($compile, $svc) {
                     var s = dataFilter;
                     while (s.indexOf('%s')>=0)
                         s = angular.format(s, filter);
-                    q.filter(s);
+                    q.filter(s).take(limit);
                     return $svc.get(q);
                 }
 
