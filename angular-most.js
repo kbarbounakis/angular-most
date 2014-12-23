@@ -35,6 +35,13 @@ angular.extend(angular, {
     randomInt: function(min, max) {
         return Math.floor(Math.random()*max) + min;
     },
+    randomColor: function() {
+        var res = '#';
+        for (var i = 0; i < 6; i++) {
+            res += [0,1,2,3,4,5,6,7,8,9,'a','b','c','d','e','f'][Math.floor(Math.random()*16)];
+        }
+        return res;
+    },
     /**
      * @param {String} text The string to be translated.
      * @param {String=} localeSet An optional string that represents the locale set that contains the translated output. The default value is global.
@@ -1101,6 +1108,12 @@ function CommonController($scope, $q, $location, $window, $routeParams, $shared,
     $scope.today = function() {
         var res =  (new Date());
         return new Date(res.getFullYear(), res.getMonth(), res.getDate());
+    };
+
+    $scope.random = {
+        color:function() {
+            return angular.randomColor();
+        }
     };
 
     /**
