@@ -149,6 +149,20 @@ angular.extend(angular, {
         if (typeof s !== 'string')
             return s;
         return s.replace(/\.(\w+)/ig, '[$1]');
+    },
+    bootstrapDevice: function() {
+        var sizes = ['lg', 'md', 'sm', 'xs'];
+        for (var i = sizes.length - 1; i >= 0; i--) {
+            var $el = angular.element('<div id="sizeTest" class="hidden-'+sizes[i]+'">&nbsp;</div>');
+            $el.appendTo(angular.element('body'));
+            if ($el.is(':hidden')) {
+                $el.remove();
+                return sizes[i];
+            }
+            else {
+                $el.remove();
+            }
+        }
     }
 });
 
@@ -406,6 +420,21 @@ function ClientDataQueryable(model) {
         set: function(value) { self.privates.schema = value; }
     });
 
+}
+
+ClientDataQueryable.prototype.data = function() {
+    var self = this;
+    var deferred = self.service.$q.defer();
+    self.service.items(angular.isDefined(self.$prepared) ? self.copy() : self, function(err, result) {
+        if (err) {
+            console.log(err);
+            deferred.reject(err);
+        }
+        else {
+            deferred.resolve(result);
+        }
+    });
+    return deferred.promise;
 }
 
 ClientDataQueryable.prototype.reset = function() {
@@ -2016,8 +2045,186 @@ function IncludeReplaceDirective() {
     };
 }
 
+function DataTableClientController($scope, $q, $filter, DTOptionsBuilder, DTColumnBuilder) {
+    CommonController($scope);
+    //get dialog service
+    var $svc, $rootElement = angular.element(document.querySelector('.ng-scope')), $injector = $rootElement.injector();
+    if ($injector) {
+        //ensure application services
+        if ($injector.has('$svc'))
+            $svc = $injector.get('$svc');
+    }
+
+    var q = new ClientDataQueryable($scope.client.route.current.model);
+    q.service = $svc;
+    if ($scope.client.route.$filter) {
+        q.$filter=$scope.client.route.$filter;
+        q.prepare();
+    }
+    $scope.dtOptions = DTOptionsBuilder.newOptions().withFnServerData(function(sSource, aoData, fnCallback, oSettings) {
+        var skip = aoData[3].value, top = aoData[4].value;
+        if (aoData[2].value.length==0) {
+            if ($scope.client.route.current.order) {
+                var columns = $scope.dtColumns.$$state.value;
+                if (angular.isArray($scope.client.route.current.order)) {
+                    $scope.client.route.current.order.forEach(function(order) {
+                       if (order.name) {
+                           var ix = columns.findIndex(function(y) { return y.mData===order.name });
+                           if (ix>=0) {
+                               aoData[2].value.push({ column:ix, dir:(order.dir || 'asc') });
+                           }
+                       }
+                    });
+                }
+            }
+        }
+        var orders = aoData[2].value;
+        var searchFor=aoData[5].value;
+        //clear order
+        delete q.$orderby;
+        if (angular.isArray(orders)) {
+            orders.forEach(function(order) {
+                var column = aoData[1].value[parseInt(order.column)];
+                if (column) {
+                    if (!/\./.test(column.data)) {
+                        if (order.dir==='desc') {
+                            if (q.$orderby)
+                                q.thenByDescending(column.data);
+                            else
+                                q.orderByDescending(column.data);
+                        }
+                        else {
+                            if (q.$orderby)
+                                q.thenBy(column.data);
+                            else
+                                q.orderBy(column.data);
+                        }
+                    }
+                }
+            });
+        }
+        if (searchFor ) {
+            if (searchFor.value.length > 0) {
+                var searchfilter;
+                var filter = [];
+                for (var i = 0; i < $scope.dtColumns.$$state.value.length; i++) {
+                    var col = $scope.dtColumns.$$state.value[i];
+                    if (col.bSearchable)
+                        filter.push("indexof(" + col["mData"] + ",'" + searchFor.value.replace(/'/g, "''") + "') gt 0");
+                }
+                searchfilter = filter.join(' or ');
+                q.filter(searchfilter);
+            }
+            else {
+                delete q.$filter;
+            }
+        }
+        q.skip(skip).take(top).inlineCount(true).data().then(function(result) {
+            var res  = {
+                recordsTotal:result.total,
+                recordsFiltered:result.total,
+                data:result.records
+            };
+            $scope.selected = null;
+            fnCallback(res);
+        }, function(reason) {
+            $scope.selected = null;
+            console.log(reason);
+        });
+    }).withOption('serverSide', true)
+        .withTableTools()
+        .withTableToolsButtons([])
+        .withTableToolsOption("sRowSelect", "single")
+        .withTableToolsOption("sSelectedClass", "selected")
+        .withTableToolsOption("fnRowSelected", function ( nodes ) {
+            var $table = $(nodes).closest('table').DataTable();
+            $scope.$apply(function() {
+                $scope.selected = $table.row(nodes[0]).data();
+                $scope.broadcast('item.selected',$scope.selected);
+            });
+        })
+        .withTableToolsOption("fnRowDeselected", function (nodes) {
+            $scope.$apply(function() {
+                $scope.selected = null;
+            });
+        })
+        .withPaginationType('full_numbers')
+        .withOption('lengthMenu',[5,10,25])
+        .withOption('bFilter',true)
+        .withOption('aaSorting',[])
+        .withOption('rowCallback', function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+            // Unbind first in order to avoid any duplicate handler (see https://github.com/l-lin/angular-datatables/issues/87)
+            $('td', nRow).unbind('click');
+            $('td', nRow).bind('click', function(e) {
+                var $table = $(e.target).closest('table').DataTable();
+                var tableTools = TableTools.fnGetInstance($table[0]);
+                if (tableTools)
+                    tableTools.fnSelect($(e.target));
+            });
+            return nRow;
+        });
+
+    var deferred = $q.defer();
+    $scope.dtColumns = deferred.promise;
+    $svc.schema($scope.client.route.current.model, function(err, schema) {
+        if (err) {
+            console.log(err);
+            deferred.reject('Failed to get table columns.');
+            return;
+        }
+        else {
+
+            var view = schema.views.find(function(x) { return x.name==$scope.client.route.current.view; });
+            if (angular.isObject(view)) {
+                var dtColumns = [];
+                dtColumns.name = view.name;
+                view.fields.forEach(function(field) {
+                    var column = DTColumnBuilder.newColumn(field.name).withTitle(angular.loc(field.title));
+                    if (angular.isDefined(field.sortable))
+                        if (!field.sortable)
+                            column.notSortable();
+                    var format = field.format, coltype = field.coltype, href = field.href
+                    if (angular.isDefined(format)) {
+                        column.renderWith(function(value) {
+                            return $filter(format)(value);
+                        });
+                    }
+                    else {
+                        if (coltype==='link') {
+                            column.renderWith(function(value, type, row) {
+                                var row_href = new String(href);
+                                if (row_href) {
+                                    var re = /\{%(.*?)\}/i;
+                                    var match = re.exec(row_href);
+                                    while (match) {
+                                        row_href = row_href.replace(match[0],row[match[1]]);
+                                        match = re.exec(row_href);
+                                    }
+                                }
+                                return angular.format('<a href="%s">%s</a>',row_href,value);
+                            });
+                        }
+                    }
+                    column.bSearchable=true;
+                    if (angular.isDefined(field.searchable))
+                        if (!field.searchable)
+                            column.bSearchable=false;
+                    dtColumns.push(column);
+                });
+                deferred.resolve(dtColumns);
+            }
+            else {
+                deferred.reject('Failed to get model view.');
+            }
+        }
+    });
+
+}
+
+
+
 //register module
-var most = angular.module('most', ['ngRoute']);
+var most = angular.module('most', ['ngRoute','datatables']);
 //constants
 //
 //services
@@ -2029,7 +2236,8 @@ most.factory('$svc', function ($http, $q) {
 //controllers
 most.controller('DataController', DataController)
     .controller('ItemController', ItemController)
-    .controller('CommonController', CommonController);
+    .controller('CommonController', CommonController)
+    .controller('DataTableClientController', DataTableClientController);
 //directives
 most.directive('loc',MostLocalizedDirective)
     .directive('locHtml',MostLocalizedHtmlDirective)
