@@ -1930,6 +1930,26 @@ function MostDataInstanceDirective($svc, $shared) {
 
             });
 
+            //register for filter change
+            scope.$on('data.reload', function(event, args)
+            {
+                if (typeof args === 'object') {
+                    if (args.name==attrs.name) {
+                        q.reset().items.then(function(result) {
+                            scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
+                        });
+                    }
+                }
+                else if (typeof args === 'string') {
+                    if (args===attrs.name) {
+                        q.reset().items.then(function(result) {
+                            scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
+                        });
+                    }
+                }
+
+            });
+
         }
     };
 }
