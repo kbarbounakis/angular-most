@@ -2241,6 +2241,30 @@ function DataTableClientController($scope, $q, $filter, DTOptionsBuilder, DTColu
 
 }
 
+function MostSubmitDirective() {
+    return {
+        restrict: 'A',
+        scope: { mostSubmit: '=' },
+        link: function(scope, element, attrs) {
+            //get current element
+            var $element = angular.element(element);
+            //hold parsley form
+            var $form = $element.parsley();
+            //initialize parsley form and bind submit
+            $element.bind('submit', function (e) {
+                //validate form
+                $form.validate();
+                //if form is invalid
+                if (!$form.isValid())
+                //prevent default event
+                    e.preventDefault();
+                else
+                //otherwise submit form
+                    scope.mostSubmit();
+            });
+        }
+    };
+}
 
 
 //register module
