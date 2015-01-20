@@ -1122,10 +1122,12 @@ function CommonController($scope, $q, $location, $window, $routeParams, $shared,
     //set static current route
     $scope.client.route.current = { };
     if ($route) {
-        var $$route = $route.current.$$route;
-        if (typeof $$route !=='undefined' && $$route !==null) {
-            $scope.client.route.current = $$route;
-        }
+    	if (angular.isDefined($route.current)) {
+    		var $$route = $route.current.$$route;
+	        if (typeof $$route !=='undefined' && $$route !==null) {
+	            $scope.client.route.current = $$route;
+	        }	
+    	}
     }
 
     /**
