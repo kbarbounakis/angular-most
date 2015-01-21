@@ -1204,7 +1204,9 @@ function DataController($scope, $q, $location, $svc, $window, $shared, $routePar
 
     $scope.route = $window.route;
 
-    $scope.reload = function() {
+    $scope.reloadData = function() {
+        if (!angular.isDefined($scope.query.$model))
+            return;
         $scope.query.items = null;
         $svc.items($scope.query, function(err, result) {
             if (err) {
@@ -1220,16 +1222,16 @@ function DataController($scope, $q, $location, $svc, $window, $shared, $routePar
         //register for item.new event
         $scope.$on('item.new', function(event, args) {
             args = args || {};
-                if (args.model==$scope.model) { $scope.reload(); }
+                if (args.model==$scope.model) { $scope.reloadData(); }
         });
         //register for item.delete event
         $scope.$on('item.delete', function(event, args) {
             args = args || {};
-            if (args.model==$scope.model) { $scope.reload(); }
+            if (args.model==$scope.model) { $scope.reloadData(); }
         });
         $scope.$on('item.save', function(event, args) {
             args = args || {};
-            if (args.model==$scope.model) { $scope.reload(); }
+            if (args.model==$scope.model) { $scope.reloadData(); }
         });
     }
 
@@ -1932,8 +1934,7 @@ function MostDataInstanceDirective($svc, $shared) {
 
             });
 
-            //register for filter change
-            scope.$on('data.reload', function(event, args)
+            var dataReload = function(event, args)
             {
                 if (typeof args === 'object') {
                     if (args.name==attrs.name) {
@@ -1950,7 +1951,26 @@ function MostDataInstanceDirective($svc, $shared) {
                     }
                 }
 
-            });
+            };
+            var dataRefresh = function(event, args)
+            {
+                if (typeof args === 'object') {
+                    if (args.model== q.$model) {
+                        q.reset().items.then(function(result) {
+                            scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
+                        });
+                    }
+                }
+
+            };
+            //register for data reload
+            scope.$on('data.reload', dataReload);
+            //register for data refresh
+            scope.$on('item.new', dataRefresh);
+            //register for data refresh
+            scope.$on('item.save', dataRefresh);
+            //register for data refresh
+            scope.$on('item.delete', dataRefresh);
 
         }
     };
