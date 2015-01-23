@@ -2226,6 +2226,10 @@ function DataTableClientController($scope, $q, $filter, DTOptionsBuilder, DTColu
                         if (!field.sortable)
                             column.notSortable();
                     var format = field.format, coltype = field.coltype, href = field.href
+                  if ((field.type=="Integer") || (field.type=="Number"))
+                    column.withOption("defaultContent","0");
+                    else
+                      column.withOption("defaultContent","-");
                     if (angular.isDefined(format)) {
                         column.renderWith(function(value) {
                             return $filter(format)(value);
