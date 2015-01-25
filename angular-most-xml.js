@@ -414,7 +414,7 @@ XmlUtil.prototype.xmlFullNodeName = function(n) {
 
 XmlUtil.prototype.isArray = function isArray(ar) {
     return Array.isArray(ar) ||
-        (typeof ar === 'object' && objectToString(ar) === '[object Array]');
+        (typeof ar === 'object' && Object.prototype.toString.call(ar) === '[object Array]');
 };
 
 XmlUtil.prototype.format = function(f) {
