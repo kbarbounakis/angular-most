@@ -2241,7 +2241,12 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                             column.withOption("defaultContent","-");
                         if (angular.isDefined(format)) {
                             column.renderWith(function(value) {
-                                return $filter(format)(value);
+                                var formats=format.split("|");
+                                var formattedValue=value;
+                                for (var i = 0; i < formats.length; i++) {
+                                    formattedValue= $filter(formats[i].replace(/(^\s*|\s*$)/g, ''))(formattedValue);
+                                }
+                                return formattedValue;
                             });
                         }
                         else {
