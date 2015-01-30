@@ -2287,7 +2287,7 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
 
 function DataTableClientController($scope, $q, $filter, DTOptionsBuilder, DTColumnBuilder) {
     DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumnBuilder);
-    $scope.init($scope.client.route.current.model, $scope.client.route.current.view, $scope.client.route.$filter, $scope.client.route.current.order);
+    $scope.init($scope.client.route.current.model, $scope.client.route.current.view, $scope.client.route.$filter, $scope.client.route.current.order,$scope.client.route.current.expand);
 }
 
 function DataTableVariantController($scope, $q, $filter, DTOptionsBuilder, DTColumnBuilder) {
