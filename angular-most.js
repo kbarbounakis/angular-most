@@ -2100,13 +2100,16 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
     var dtOptionsPromise = $q.defer();
     $scope.dtOptions = dtOptionsPromise.promise;
 
-    $scope.init = function(model, view, filter, order) {
+    $scope.init = function(model, view, filter, order,expand) {
 
         var q = new ClientDataQueryable(model);
         q.service = $svc;
         if (filter) {
             q.$filter=filter;
             q.prepare();
+        }
+        if (expand) {
+            q.$expand=expand;
         }
         var dtOptions = DTOptionsBuilder.newOptions().withFnServerData(function(sSource, aoData, fnCallback, oSettings) {
             var skip = aoData[3].value, top = aoData[4].value;
@@ -2291,7 +2294,7 @@ function DataTableVariantController($scope, $q, $filter, DTOptionsBuilder, DTCol
     DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumnBuilder);
     $scope.$watch('options', function(value) {
         if (angular.isDefined(value)) {
-            $scope.init(value.$model, value.$view, value.$filter, value.$order);
+            $scope.init(value.$model, value.$view, value.$filter, value.$order,value.$expand);
         }
     });
 
