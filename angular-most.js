@@ -2035,13 +2035,42 @@ function MostEventDirective($timeout) {
             //get event name
             var name = element.attr('name') || attrs['event'], action = attrs['eventAction'];
             if (name) {
-                scope.$on(name, function(event) {
+                scope.$on(name, function(event, args) {
                     if (action) {
                         $timeout(function(){
-                            scope.$apply(action);
+                            scope.$args = args;
+                            try {
+                                scope.$apply(action);
+                            }
+                            catch(e) {
+                                console.log(e);
+                            }
+                            scope.$args = null;
                         });
                     }
                 });
+            }
+        }
+    };
+}
+
+function MostWatchDirective() {
+    return {
+        restrict: 'E',
+        link: function(scope, element, attrs) {
+            //get event name
+            var name = element.attr('name') || attrs['event'], args = attrs['eventArgs'];
+            if (name) {
+                if (typeof scope.broadcast === 'function') {
+                    scope.$watch(args, function (value) {
+                        scope.broadcast(name, value);
+                    });
+                }
+                else {
+                    scope.$watch(args, function (value) {
+                        scope.emit(name, value);
+                    });
+                }
             }
         }
     };
@@ -2362,6 +2391,7 @@ most.directive('loc',MostLocalizedDirective)
     .directive('locHtml',MostLocalizedHtmlDirective)
     .directive('mostItem',MostItemDirective)
     .directive('mostEvent',MostEventDirective)
+    .directive('mostWatch',MostWatchDirective)
     .directive('mostString',MostStringDirective)
     .directive('mostTypeahead',MostTypeaheadDirective)
     .directive('mostData',MostDataInstanceDirective)
