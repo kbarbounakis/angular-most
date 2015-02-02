@@ -2053,7 +2053,10 @@ function MostEventDirective($timeout) {
         }
     };
 }
-
+/**
+ * @return {*}
+ * @constructor
+ */
 function MostWatchDirective() {
     return {
         restrict: 'E',
