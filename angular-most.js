@@ -1165,6 +1165,25 @@ function CommonController($scope, $q, $location, $window, $routeParams, $shared,
         $window.location.href = path;
     }
 
+    $scope.back = function(err) {
+        if (err) {
+            //do nothing
+        }
+        else {
+            if ($scope.returnUrl) {
+                $window.location.href = $scope.returnUrl;
+            }
+            else if (typeof $scope.client.route.r !== 'undefined') {
+                var url = $window.location.search ? $window.location.pathname.concat('?', $window.location.search) : $window.location.pathname;
+                $window.location.href = $scope.client.route.r == '/' ? url : $scope.client.route.r;
+            }
+            else if ($scope.$root.referrer) {
+                //redirect to $location.path
+                $window.location.href = '#'.concat($scope.$root.referrer);
+            }
+        }
+    }
+
 }
 
 /**
@@ -1490,11 +1509,14 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
 
     $scope.cancel = function()
     {
-         if (typeof $scope.client.route.r !== 'undefined') {
+        if ($scope.returnUrl) {
+            $window.location.href = $scope.returnUrl;
+        }
+         else if (typeof $scope.client.route.r !== 'undefined') {
              var url = $window.location.search ? $window.location.pathname.concat('?', $window.location.search) : $window.location.pathname;
              $window.location.href = $scope.client.route.r == '/' ? url : $scope.client.route.r;
          }
-        if ($scope.$root.referrer) {
+        else if ($scope.$root.referrer) {
             //redirect to $location.path
             $window.location.href = '#'.concat($scope.$root.referrer);
         }
@@ -1507,7 +1529,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
             if ($scope.item[key])
                 $window.location.href =angular.format('/%s/%s/show.html', $scope.model, $scope.item[key]);
         }
-    }
+    };
 
     $scope.remove = function(callback)
     {
