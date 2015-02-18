@@ -1775,7 +1775,10 @@ function MostTypeaheadDirective($compile, $svc) {
             return function (scope, iElement, iAttrs) {
                 var $element = $(iElement);
                 //set label
-                $element.find("label").html(iAttrs.title);
+                if (typeof iAttrs.title!=='undefined')
+                    $element.find("label").html(iAttrs.title);
+                else
+                    $element.find("label").remove();
                 //set scope property name
                 var dataName = iAttrs.name.concat('Data');
                 //set model
@@ -1783,7 +1786,14 @@ function MostTypeaheadDirective($compile, $svc) {
                 var attributes = $element.prop("attributes");
                 var $input = $element.find("input");
                 $.each(attributes, function () {
-                    if (this.name !== "class") { $input.attr(this.name, this.value); }
+                    if (this.name === "placeholder") {
+                        $input.attr(this.name,angular.localized(this.value));
+                    }
+                    else {
+                        if (this.name !== "class") {
+                            $input.attr(this.name, this.value);
+                        }
+                    }
                 });
                 //set typeahead properties
                 var field = iAttrs['field'], dataFilter=null;
