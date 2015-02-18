@@ -1440,17 +1440,18 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
                             params[key]=$scope.server.route[key];
                     }
 
-                    var resolveAssociatedObject = function(mapping, associatedValue) {
+                    var resolveAssociatedObject = function(attr, associatedValue) {
+                        var mapping=attr.mapping;
                         var q = new ClientDataQueryable(mapping.parentModel);
                         q.service = $svc;
                         var deferred = $q.defer();
                         //store property name to deferred
                         $scope.item[mapping.childField] = deferred.promise;
                         q.where(mapping.parentField).equal(associatedValue).item.then(function(result) {
-                            $scope.item[mapping.childField]=result;
+                            $scope.item[attr.property||attr.name]=result;
                             deferred.resolve(result);
                         }, function(reason) {
-                            $scope.item[mapping.childField]=null;
+                            $scope.item[attr.property||attr.name]=null;
                             deferred.resolve(null);
                             console.log('Failed to get associated object with reason:' + reason);
                         });
@@ -1459,7 +1460,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
                     for(var key in params) {
                         if (params.hasOwnProperty(key)) {
                             //check if this property belongs to target schema
-                            var attr = schema.attributes.filter(function(x) { return x.name==key; })[0];
+                            var attr = schema.attributes.filter(function(x) { return (x.name==key) || (x.property==key); })[0];
                             if (attr && !attr.primary) {
                                 var value = params[key];
                                 if (!angular.isDefined($scope.item[key])) {
@@ -1470,7 +1471,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
                                         else {
                                             //query associated model
                                             if (attr.mapping.associationType==='association' && attr.mapping.childModel === $scope.model) {
-                                                resolveAssociatedObject(attr.mapping, value);
+                                                resolveAssociatedObject(attr, value);
                                             }
                                         }
                                     }
@@ -2222,7 +2223,8 @@ most.directive('loc',MostLocalizedDirective)
     .directive('mostRequired',MostRequiredDirective)
     .directive('includeReplace',IncludeReplaceDirective)
     .directive('mostConfirm',MostConfirmDirective)
-    .directive('ctrlInit',ControllerInitDirective);
+    .directive('ctrlInit',ControllerInitDirective)
+    .directive('mostEmail',MostEmailDirective);
 //filters
 most.filter('loc', MostLocalizedFilter);
 
