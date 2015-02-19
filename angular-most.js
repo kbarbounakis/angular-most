@@ -1258,7 +1258,7 @@ function DataController($scope, $q, $location, $svc, $window, $shared, $routePar
         $svc.save($scope.item, { model:$scope.model }, function(err, result) {
             if (err) {
                 $scope.submitted = false;
-                $scope.messages=err.message;
+                $scope.messages=angular.localized(err.message);
             }
             else {
                 $scope.showNew = false;
@@ -1276,7 +1276,7 @@ function DataController($scope, $q, $location, $svc, $window, $shared, $routePar
         $svc.save($scope.query.items, { model:$scope.model }, function(err, result) {
             if (err) {
                 $scope.submitted = false;
-                $scope.messages=err.message;
+                $scope.messages=angular.localized(err.message);
             }
             else {
                 $scope.submitted = true;
@@ -1295,7 +1295,7 @@ function DataController($scope, $q, $location, $svc, $window, $shared, $routePar
         $svc.remove(item, { model:$scope.model }, function(err, result) {
             if (err) {
                 $scope.submitted = false;
-                $scope.messages=err.message;
+                $scope.messages=angular.localized(err.message);
                 //invoke callback with error
                 callback(err);
             }
@@ -1539,7 +1539,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
         $svc.remove(item, { model:$scope.model }, function(err, result) {
             if (err) {
                 $scope.submitted = false;
-                $scope.messages=err.message;
+                $scope.messages=angular.localized(err.message);
                 //invoke callback with error
                 callback(err);
             }
@@ -1560,7 +1560,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
         $svc.save($scope.item, { model:$scope.model }, function(err, result) {
             if (err) {
                 $scope.submitted = false;
-                $scope.messages=err.message;
+                $scope.messages=angular.localized(err.message);
                 //invoke callback with error
                 callback(err);
             }
