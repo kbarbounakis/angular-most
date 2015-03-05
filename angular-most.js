@@ -660,6 +660,7 @@ ClientDataQueryable.prototype.expand = function(entities) {
     }
     else
         this.$expand = entities;
+    return this;
 }
 
 
