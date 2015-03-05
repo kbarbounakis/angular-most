@@ -163,6 +163,21 @@ angular.extend(angular, {
                 $el.remove();
             }
         }
+    },
+    isInteger: function(value) {
+        if ((undefined === value) || (null === value)) {
+            return false;
+        }
+        return value % 1 == 0;
+    },
+    isFloat: function(value) {
+        if ((undefined === value) || (null === value)) {
+            return false;
+        }
+        if (typeof value == 'number') {
+            return true;
+        }
+        return !isNaN(value - 0);
     }
 });
 
