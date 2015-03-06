@@ -278,10 +278,14 @@ ClientDataService.prototype.save = function(item, options, callback) {
 
 ClientDataService.prototype.new = function(item, options, callback) {
     var $http = this.$http, $q = this.$q;
+    //get data
+    var data = angular.toParam(item, 'data');
+    if (options._CSRFToken)
+        data = data + '&_CSRFToken='+options._CSRFToken;
     $http({
         method: options.method || 'POST',
         url: String.format("/%s/new.json", options.model),
-        data: angular.toParam(item, 'data'),  // pass in data as strings
+        data: data,  // pass in data as strings
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }  // set the headers so angular passing info as form data (not request payload)
     }).success(function (data) {
         callback(null, data);
