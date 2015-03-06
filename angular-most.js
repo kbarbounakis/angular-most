@@ -163,6 +163,21 @@ angular.extend(angular, {
                 $el.remove();
             }
         }
+    },
+    isInteger: function(value) {
+        if ((undefined === value) || (null === value)) {
+            return false;
+        }
+        return value % 1 == 0;
+    },
+    isFloat: function(value) {
+        if ((undefined === value) || (null === value)) {
+            return false;
+        }
+        if (typeof value == 'number') {
+            return true;
+        }
+        return !isNaN(value - 0);
     }
 });
 
@@ -649,6 +664,7 @@ ClientDataQueryable.prototype.expand = function(entities) {
     }
     else
         this.$expand = entities;
+    return this;
 }
 
 
@@ -1262,7 +1278,7 @@ function DataController($scope, $q, $location, $svc, $window, $shared, $routePar
         $svc.save($scope.item, { model:$scope.model }, function(err, result) {
             if (err) {
                 $scope.submitted = false;
-                $scope.messages=err.message;
+                $scope.messages=angular.localized(err.message);
             }
             else {
                 $scope.showNew = false;
@@ -1280,7 +1296,7 @@ function DataController($scope, $q, $location, $svc, $window, $shared, $routePar
         $svc.save($scope.query.items, { model:$scope.model }, function(err, result) {
             if (err) {
                 $scope.submitted = false;
-                $scope.messages=err.message;
+                $scope.messages=angular.localized(err.message);
             }
             else {
                 $scope.submitted = true;
@@ -1299,7 +1315,7 @@ function DataController($scope, $q, $location, $svc, $window, $shared, $routePar
         $svc.remove(item, { model:$scope.model }, function(err, result) {
             if (err) {
                 $scope.submitted = false;
-                $scope.messages=err.message;
+                $scope.messages=angular.localized(err.message);
                 //invoke callback with error
                 callback(err);
             }
@@ -1444,17 +1460,18 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
                             params[key]=$scope.server.route[key];
                     }
 
-                    var resolveAssociatedObject = function(mapping, associatedValue) {
+                    var resolveAssociatedObject = function(attr, associatedValue) {
+                        var mapping=attr.mapping;
                         var q = new ClientDataQueryable(mapping.parentModel);
                         q.service = $svc;
                         var deferred = $q.defer();
                         //store property name to deferred
                         $scope.item[mapping.childField] = deferred.promise;
                         q.where(mapping.parentField).equal(associatedValue).item.then(function(result) {
-                            $scope.item[mapping.childField]=result;
+                            $scope.item[attr.property||attr.name]=result;
                             deferred.resolve(result);
                         }, function(reason) {
-                            $scope.item[mapping.childField]=null;
+                            $scope.item[attr.property||attr.name]=null;
                             deferred.resolve(null);
                             console.log('Failed to get associated object with reason:' + reason);
                         });
@@ -1463,7 +1480,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
                     for(var key in params) {
                         if (params.hasOwnProperty(key)) {
                             //check if this property belongs to target schema
-                            var attr = schema.attributes.filter(function(x) { return x.name==key; })[0];
+                            var attr = schema.attributes.filter(function(x) { return (x.name==key) || (x.property==key); })[0];
                             if (attr && !attr.primary) {
                                 var value = params[key];
                                 if (!angular.isDefined($scope.item[key])) {
@@ -1474,7 +1491,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
                                         else {
                                             //query associated model
                                             if (attr.mapping.associationType==='association' && attr.mapping.childModel === $scope.model) {
-                                                resolveAssociatedObject(attr.mapping, value);
+                                                resolveAssociatedObject(attr, value);
                                             }
                                         }
                                     }
@@ -1542,7 +1559,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
         $svc.remove(item, { model:$scope.model }, function(err, result) {
             if (err) {
                 $scope.submitted = false;
-                $scope.messages=err.message;
+                $scope.messages=angular.localized(err.message);
                 //invoke callback with error
                 callback(err);
             }
@@ -1563,7 +1580,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
         $svc.save($scope.item, { model:$scope.model }, function(err, result) {
             if (err) {
                 $scope.submitted = false;
-                $scope.messages=err.message;
+                $scope.messages=angular.localized(err.message);
                 //invoke callback with error
                 callback(err);
             }
@@ -1779,7 +1796,10 @@ function MostTypeaheadDirective($compile, $svc) {
             return function (scope, iElement, iAttrs) {
                 var $element = $(iElement);
                 //set label
-                $element.find("label").html(iAttrs.title);
+                if (typeof iAttrs.title!=='undefined')
+                    $element.find("label").html(iAttrs.title);
+                else
+                    $element.find("label").remove();
                 //set scope property name
                 var dataName = iAttrs.name.concat('Data');
                 //set model
@@ -1787,7 +1807,14 @@ function MostTypeaheadDirective($compile, $svc) {
                 var attributes = $element.prop("attributes");
                 var $input = $element.find("input");
                 $.each(attributes, function () {
-                    if (this.name !== "class") { $input.attr(this.name, this.value); }
+                    if (this.name === "placeholder") {
+                        $input.attr(this.name,angular.localized(this.value));
+                    }
+                    else {
+                        if (this.name !== "class") {
+                            $input.attr(this.name, this.value);
+                        }
+                    }
                 });
                 //set typeahead properties
                 var field = iAttrs['field'], dataFilter=null;
@@ -2216,7 +2243,8 @@ most.directive('loc',MostLocalizedDirective)
     .directive('mostRequired',MostRequiredDirective)
     .directive('includeReplace',IncludeReplaceDirective)
     .directive('mostConfirm',MostConfirmDirective)
-    .directive('ctrlInit',ControllerInitDirective);
+    .directive('ctrlInit',ControllerInitDirective)
+    .directive('mostEmail',MostEmailDirective);
 //filters
 most.filter('loc', MostLocalizedFilter);
 
