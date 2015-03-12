@@ -1518,7 +1518,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
             var q = new ClientDataQueryable();
             q.service = $svc;
             //todo::load current model
-            var item = q.model($scope.model).where('id').equal($scope.id).first().item;
+            var item = q.model($scope.model).where('id').equal($scope.id).expand($scope.expand).first().item;
             item.then(function(result) {
                 $scope.item = result;
             }, function(reason) {
