@@ -1476,6 +1476,22 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
                             console.log('Failed to get associated object with reason:' + reason);
                         });
                     }
+                    var resolveJunctionObject = function(attr, value) {
+                        var mapping=attr.mapping;
+                        var q = new ClientDataQueryable(mapping.childModel);
+                        q.service = $svc;
+                        var deferred = $q.defer();
+                        //store property name to deferred
+                        $scope.item[attr.property||attr.name] = deferred.promise;
+                        q.where(mapping.childField).equal(value).item.then(function(result) {
+                            $scope.item[attr.property||attr.name]=result;
+                            deferred.resolve(result);
+                        }, function(reason) {
+                            $scope.item[attr.property||attr.name]=null;
+                            deferred.resolve(null);
+                            console.log('Failed to get junction object with reason:' + reason);
+                        });
+                    }
 
                     for(var key in params) {
                         if (params.hasOwnProperty(key)) {
@@ -1492,6 +1508,12 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
                                             //query associated model
                                             if (attr.mapping.associationType==='association' && attr.mapping.childModel === $scope.model) {
                                                 resolveAssociatedObject(attr, value);
+                                            }
+                                            else
+                                            {
+                                                if (attr.mapping.associationType==='junction') {
+                                                    resolveJunctionObject(attr, value);
+                                                }
                                             }
                                         }
                                     }
