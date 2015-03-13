@@ -1512,7 +1512,10 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
                                             else
                                             {
                                                 if (attr.mapping.associationType==='junction') {
-                                                    resolveJunctionObject(attr, value);
+                                                    if (typeof value==='string'){
+                                                        if (value.length>0)
+                                                            resolveJunctionObject(attr, value);
+                                                    }
                                                 }
                                             }
                                         }
