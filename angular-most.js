@@ -106,6 +106,10 @@ angular.extend(angular, {
             prefix = prefix || 'data';
             return 'data=' + encodeURIComponent(object);
         }
+        if (angular.isArray(object)) {
+            if (object.length==0)
+                return  encodeURIComponent(key) + '=';
+        }
         for (key in object) {
             if (object.hasOwnProperty(key)) {
                 value = object[ key ];
@@ -1594,6 +1598,13 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
                 //broadcast item.new event
                 if ($shared) {
                     $shared.broadcast('item.delete', { model:$scope.model, data:item });
+                }
+                if ($scope.redirection==false)
+                    return;
+                //if current scope has a return url
+                if ($scope.returnUrl) {
+                    //redirect to this url
+                    $window.location.href = $scope.returnUrl;
                 }
             }
         });
