@@ -1484,8 +1484,8 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
                         //store property name to deferred
                         $scope.item[attr.property||attr.name] = deferred.promise;
                         q.where(mapping.childField).equal(value).item.then(function(result) {
-                            $scope.item[attr.property||attr.name]=result;
-                            deferred.resolve(result);
+                            $scope.item[attr.property||attr.name]=[result];
+                            deferred.resolve([result]);
                         }, function(reason) {
                             $scope.item[attr.property||attr.name]=null;
                             deferred.resolve(null);
