@@ -1330,6 +1330,9 @@ function DataController($scope, $q, $location, $svc, $window, $shared, $routePar
                 if ($shared) {
                     $shared.broadcast('item.delete', { model:$scope.model, data:item });
                 }
+                if ($scope.returnUrl) {
+                    $window.location.href = $scope.returnUrl;
+                }
             }
         });
     };
