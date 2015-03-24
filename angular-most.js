@@ -1857,7 +1857,8 @@ function MostTypeaheadDirective($compile, $svc) {
                 });
                 //set typeahead properties
                 var field = iAttrs['field'], dataFilter=null;
-                var typeaheadAttr = angular.format('x as x.%s for x in %s($viewValue)', field, dataName);
+                var value = iAttrs['value'] || "x";
+                var typeaheadAttr = angular.format('%s as x.%s for x in %s($viewValue)',value, field, dataName);
                 var limit = parseInt(iAttrs['limit']) || 10;
                 //set typeahead attribute
                 $input.attr("typeahead", typeaheadAttr);
@@ -1876,7 +1877,9 @@ function MostTypeaheadDirective($compile, $svc) {
                 else {
                     dataFilter = angular.format("indexof(%s,'%s') gt 0", field);
                 }
-
+                if (iAttrs['filter']) {
+                    dataFilter=angular.format("%s and (%s))", iAttrs["filter"],dataFilter);
+                }
                 //set scope get function
                 scope.route = window.route;
                 scope[dataName] = function(filter) {
