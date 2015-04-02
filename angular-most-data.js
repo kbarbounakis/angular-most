@@ -142,7 +142,7 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
             }
             else {
 
-                var dataView = schema.views.find(function(x) { return x.name==view; });
+                var dataView = schema.views.find(function(x) { return x.name==view; }), reAlign = /^left$|^center$|^right$|^justify$/i;
                 if (angular.isObject(dataView)) {
                     var dtColumns = [];
                     dtColumns.name = dataView.name;
@@ -151,7 +151,29 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                         if (angular.isDefined(field.sortable))
                             if (!field.sortable)
                                 column.notSortable();
-                        var format = field.format, coltype = field.coltype, href = field.href
+                        if (angular.isDefined(field.visible))
+                            if (!field.visible)
+                                column.notVisible();
+                        var cssClass = [];
+                        //get field css class , if any
+                        if (angular.isDefined(field.cssClass)) {
+                            cssClass.push(field.cssClass);
+                        }
+                        //get header align, if defined
+                        var headerAlign = reAlign.exec(field.halign);
+                        if (headerAlign) {
+                            cssClass.push('dt-head-' + headerAlign[0]);
+                        }
+                        //get text align, if defined
+                        var textAlign = reAlign.exec(field.align);
+                        if (textAlign) {
+                            cssClass.push('dt-' + textAlign[0]);
+                        }
+                        //apply styles
+                        if (cssClass.length>0) {
+                            column.withClass(cssClass.join(' '));
+                        }
+                        var format = field.format, coltype = field.coltype, href = field.href;
                         if ((field.type=="Integer") || (field.type=="Number"))
                             column.withOption("defaultContent","0");
                         else
