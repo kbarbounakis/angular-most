@@ -131,8 +131,6 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
 
         //set scope.dtOptions
         $scope.dtOptions = dtOptions;
-
-
         var deferred = $q.defer();
         $scope.dtColumns = deferred.promise;
         $svc.schema(model, function(err, schema) {
@@ -211,6 +209,7 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                         dtColumns.push(column);
                     });
                     deferred.resolve(dtColumns);
+                    //$scope.dtColumns = dtColumns;
                 }
                 else {
                     deferred.reject('Failed to get model view.');
@@ -223,6 +222,7 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
 function DataTableClientController($scope, $q, $filter, DTOptionsBuilder, DTColumnBuilder) {
     DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumnBuilder);
     $scope.init($scope.client.route.current.model, $scope.client.route.current.view, $scope.client.route.$filter, $scope.client.route.current.order,$scope.client.route.current.expand);
+
 }
 
 function DataTableVariantController($scope, $q, $filter, DTOptionsBuilder, DTColumnBuilder) {
@@ -230,6 +230,11 @@ function DataTableVariantController($scope, $q, $filter, DTOptionsBuilder, DTCol
     $scope.$watch('options', function(value) {
         if (angular.isDefined(value)) {
             $scope.init(value.$model, value.$view, value.$filter, value.$order,value.$expand);
+            $q.when($scope.dtColumns).then(function(value) {
+                $scope.dtColumns = value;
+            }, function(reason) {
+                $scope.dtColumns = [];
+            });
         }
     });
 }
