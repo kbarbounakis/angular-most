@@ -227,6 +227,7 @@ function DataTableClientController($scope, $q, $filter, DTOptionsBuilder, DTColu
 
 function DataTableVariantController($scope, $q, $filter, DTOptionsBuilder, DTColumnBuilder) {
     DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumnBuilder);
+    //watch options
     $scope.$watch('options', function(value) {
         if (angular.isDefined(value)) {
             $scope.init(value.$model, value.$view, value.$filter, value.$order,value.$expand);
