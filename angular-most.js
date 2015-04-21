@@ -1658,8 +1658,17 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
                     //validate $rootScope.referrer
                     if ($scope.$root.referrer) {
                         //redirect to $location.path
-                        if ($scope.$root.referrer!=$location.path() || $scope.$root.paths.length==1)
-                            $location.path($scope.$root.referrer);
+                        if ($scope.$root.referrer!=$location.path() || $scope.$root.paths.length==1) {
+                            var iy=$scope.$root.referrer.indexOf('?');
+                            if (iy< 0)
+                            {
+                                $location.path ($scope.$root.referrer);
+                            }
+                            else
+                            {
+                                $location.path($scope.$root.referrer.substr(0,iy)).search($scope.$root.referrer.substr(iy+1)) ;
+                            }
+                        }
                         else {
                             //find prev if any
                             var ix = $scope.$root.paths.findIndex(function(x) { return x.href == $location.path(); });
