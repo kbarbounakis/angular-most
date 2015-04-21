@@ -82,6 +82,14 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                 }
                 else {
                     delete q.$filter;
+                    delete q.$filter;
+                }
+            }
+            if (typeof q.$orderby === 'undefined' || q.$orderby == null) {
+                if ($scope.dataView) {
+                    if ($scope.dataView.order) {
+                        q.$orderby = $scope.dataView.order;
+                    }
                 }
             }
             q.skip(skip).take(top).inlineCount(true).data().then(function(result) {
@@ -128,7 +136,6 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                 });
                 return nRow;
             });
-
         //set scope.dtOptions
         $scope.dtOptions = dtOptions;
         var deferred = $q.defer();
@@ -139,12 +146,11 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                 deferred.reject('Failed to get table columns.');
             }
             else {
-
-                var dataView = schema.views.find(function(x) { return x.name==view; }), reAlign = /^left$|^center$|^right$|^justify$/i;
-                if (angular.isObject(dataView)) {
+                $scope.dataView = schema.views.find(function(x) { return x.name==view; }), reAlign = /^left$|^center$|^right$|^justify$/i;
+                if (angular.isObject($scope.dataView)) {
                     var dtColumns = [];
-                    dtColumns.name = dataView.name;
-                    dataView.fields.forEach(function(field) {
+                    dtColumns.name = $scope.dataView.name;
+                    $scope.dataView.fields.forEach(function(field) {
                         var column = DTColumnBuilder.newColumn(field.name).withTitle(angular.loc(field.title));
                         if (angular.isDefined(field.sortable))
                             if (!field.sortable)
@@ -216,7 +222,11 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                 }
             }
         });
+
     };
+
+
+
 }
 
 function DataTableClientController($scope, $q, $filter, DTOptionsBuilder, DTColumnBuilder) {

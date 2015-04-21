@@ -1546,6 +1546,10 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
     $scope.$watch('id', function(newValue, oldValue) {
         if ($scope.state=='new')
             return;
+        if (!angular.isDefined(newValue)) {
+            $scope.item = null;
+            return;
+        }
         if (newValue!==oldValue ||  $scope.item==null) {
             var q = new ClientDataQueryable();
             q.service = $svc;
