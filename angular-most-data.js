@@ -30,7 +30,11 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
             var skip = aoData[3].value, top = aoData[4].value;
             if (aoData[2].value.length==0) {
                 if (order) {
-                    var columns = $scope.dtColumns.$$state.value;
+                    var columns;
+                    if (angular.isArray($scope.dtColumns))
+                        columns = $scope.dtColumns;
+                    else
+                        columns = $scope.dtColumns.$$state.value;
                     if (angular.isArray(order)) {
                         order.forEach(function(order) {
                             if (order.name) {
