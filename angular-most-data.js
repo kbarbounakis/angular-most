@@ -15,7 +15,8 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
     var dtOptionsPromise = $q.defer();
     $scope.dtOptions = dtOptionsPromise.promise;
 
-    $scope.init = function(model, view, filter, order,expand) {
+
+    $scope.init = function(model, view, filter, order, expand) {
 
         var q = new ClientDataQueryable(model);
         q.service = $svc;
@@ -26,6 +27,20 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
         if (expand) {
             q.$expand=expand;
         }
+
+        $scope.$on('data.filter', function(e, args) {
+            if (angular.isDefined(args)) {
+                if (angular.isDefined(args.model) && (args.model===model)) {
+                    //delete prepared filter
+                    delete q.$prepared;
+                    //set filter and prepare
+                    q.$filter = args.filter;
+                    q.prepare();
+                    $scope.dtOptions.reloadData();
+                }
+            }
+        });
+
         var dtOptions = DTOptionsBuilder.newOptions().withFnServerData(function(sSource, aoData, fnCallback, oSettings) {
             var skip = aoData[3].value, top = aoData[4].value;
             if (aoData[2].value.length==0) {
@@ -55,37 +70,42 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                 orders.forEach(function(x) {
                     var column = aoData[1].value[parseInt(x.column)];
                     if (column) {
-                        if (!/\./.test(column.data)) {
-                            if (x.dir==='desc') {
-                                if (q.$orderby)
-                                    q.thenByDescending(column.data);
-                                else
-                                    q.orderByDescending(column.data);
-                            }
-                            else {
-                                if (q.$orderby)
-                                    q.thenBy(column.data);
-                                else
-                                    q.orderBy(column.data);
-                            }
+                        var colName2 = column.data;
+                        if (/\./.test(column.data))
+                            colName2 = column.data.replace(/\./g,'/');
+                        if (x.dir==='desc') {
+                            if (q.$orderby)
+                                q.thenByDescending(colName2);
+                            else
+                                q.orderByDescending(colName2);
+                        }
+                        else {
+                            if (q.$orderby)
+                                q.thenBy(colName2);
+                            else
+                                q.orderBy(colName2);
                         }
                     }
                 });
             }
-            if (searchFor ) {
-                if (searchFor.value.length > 0) {
+            if (searchFor) {
+                if ((searchFor.value.length > 0) && angular.isArray($scope.dtColumns)) {
                     var searchfilter;
                     var filter = [];
-                    for (var i = 0; i < $scope.dtColumns.$$state.value.length; i++) {
-                        var col = $scope.dtColumns.$$state.value[i];
-                        if (col.bSearchable)
-                            filter.push("indexof(" + col["mData"] + ",'" + searchFor.value.replace(/'/g, "''") + "') gt 0");
+                    for (var i = 0; i < $scope.dtColumns.length; i++) {
+                        var col = $scope.dtColumns[i];
+                        if (col.bSearchable) {
+                            var colName = col["mData"];
+                            if (/\./.test(colName))
+                                colName = col["mData"].replace(/\./g,'/');
+                            filter.push("indexof(" + colName + ",'" + searchFor.value.replace(/'/g, "''") + "') gt 0");
+                        }
+
                     }
                     searchfilter = filter.join(' or ');
                     q.filter(searchfilter);
                 }
                 else {
-                    delete q.$filter;
                     delete q.$filter;
                 }
             }
