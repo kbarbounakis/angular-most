@@ -1588,6 +1588,14 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
         }
     };
 
+    $scope.removeWithConfirmation = function(message, callback)
+    {
+        message = message || 'You are going to delete this item. Do you want to proceed?';
+        if (confirm(message)) {
+            $scope.remove(callback);
+        }
+    };
+
     $scope.remove = function(callback)
     {
         callback = callback || function() {};

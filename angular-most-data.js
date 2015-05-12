@@ -136,8 +136,10 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
             .withTableToolsOption("fnRowSelected", function ( nodes ) {
                 var $table = $(nodes).closest('table').DataTable();
                 $scope.$apply(function() {
+                    var selected = $table.row(nodes[0]).data();
+                    $scope.broadcast('item.selecting',selected);
                     $scope.selected = $table.row(nodes[0]).data();
-                    $scope.broadcast('item.selected',$scope.selected);
+                    $scope.broadcast('item.selected',selected);
                 });
             })
             .withTableToolsOption("fnRowDeselected", function (nodes) {
