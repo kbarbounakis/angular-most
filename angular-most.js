@@ -1918,7 +1918,7 @@ function MostTypeaheadDirective($compile, $svc) {
     };
 }
 
-function MostDataInstanceDirective($svc, $shared) {
+function MostDataInstanceDirective($svc, $shared, $parse) {
     return {
         restrict: 'E',
         scope: { model:'@', filter:'@',  select:'@', group:'@', order:'@', top:'@', skip:'@', expand:'@', prepared:'@' },
@@ -1984,7 +1984,14 @@ function MostDataInstanceDirective($svc, $shared) {
             }
             //set queryable
             q.items.then(function(result) {
-                scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
+
+                var getter = $parse(attrs.name), setter;
+                if (getter)
+                    setter = getter.assign;
+                if (typeof setter === 'function') {
+                    setter(scope.$parent, (q.$top == 1) ? result[0] : result);
+                }
+                //scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
             });
 
             //register for order change
