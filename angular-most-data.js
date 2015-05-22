@@ -142,6 +142,27 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                     $scope.broadcast('item.selected',selected);
                 });
             })
+            .withOption("fnInitComplete", function (oSettings, json) {
+                if (angular.isArray(json.data)) {
+                    if (!/^true$/i.test(oSettings.oInstance.data('auto-select')))
+                        return;
+                    var selected = json.data[0];
+                    if (typeof selected === 'undefined')
+                        return;
+                    $scope.broadcast('item.selecting',selected);
+                    try {
+                        TableTools.fnGetInstance(oSettings.oInstance[0]).s.dt.aoData[0]._DTTT_selected = true;
+                        oSettings.oInstance.find('tbody>tr:first').toggleClass('selected');
+                        $scope.selected = selected;
+                        $scope.broadcast('item.selected',selected);
+                    }
+                    catch (e) {
+                        console.log('An error occured while trying to select row.');
+                        console.log(e);
+                    }
+
+                }
+            })
             .withTableToolsOption("fnRowDeselected", function (nodes) {
                 $scope.$apply(function() {
                     $scope.selected = null;
