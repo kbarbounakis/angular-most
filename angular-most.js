@@ -280,7 +280,15 @@ ClientDataService.prototype.get = function(options) {
 
 ClientDataService.prototype.save = function(item, options, callback) {
     var $http = this.$http, $q = this.$q;
-    $http({
+    $http.put(String.format("/%s/edit.json", options.model), item).success(function (data) {
+        callback(null, data);
+    }).error(function (err, status, headers) {
+        if (headers("X-Status-Description"))
+            callback(new Error(headers("X-Status-Description")));
+        else
+            callback(new Error(err));
+    });
+    /*$http({
         method: options.method || 'POST',
         url: String.format("/%s/edit.json", options.model),
         data: angular.toParam(item, 'data'),  // pass in data as strings
@@ -292,7 +300,7 @@ ClientDataService.prototype.save = function(item, options, callback) {
             callback(new Error(headers("X-Status-Description")));
         else
             callback(new Error(err));
-    });
+    });*/
 };
 
 ClientDataService.prototype.new = function(item, options, callback) {
