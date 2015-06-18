@@ -41,6 +41,8 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
             }
         });
 
+
+
         var dtOptions = DTOptionsBuilder.newOptions().withFnServerData(function(sSource, aoData, fnCallback, oSettings) {
             var skip = aoData[3].value, top = aoData[4].value;
             if (aoData[2].value.length==0) {
@@ -123,9 +125,11 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                     data:result.records
                 };
                 $scope.selected = null;
+                delete $scope.selectedRowIndex;
                 fnCallback(res);
             }, function(reason) {
                 $scope.selected = null;
+                delete $scope.selectedRowIndex;
                 console.log(reason);
             });
         }).withOption('serverSide', true)
@@ -140,10 +144,20 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                     $scope.broadcast('item.selecting',selected);
                     $scope.selected = $table.row(nodes[0]).data();
                     $scope.broadcast('item.selected',selected);
+                    $scope.selectedRowIndex = nodes[0]._DT_RowIndex;
                 });
             })
             .withOption("fnInitComplete", function (oSettings, json) {
                 if (angular.isArray(json.data)) {
+
+                    var tableInstance = oSettings.oInstance.DataTable();
+                    $scope.setRowData = function(index, data) {
+                        if (tableInstance) {
+                            tableInstance.row(index).data(data);
+                            tableInstance.draw();
+                        }
+                    }
+
                     if (!/^true$/i.test(oSettings.oInstance.data('auto-select')))
                         return;
                     var selected = json.data[0];
@@ -155,13 +169,14 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                         oSettings.oInstance.find('tbody>tr:first').toggleClass('selected');
                         $scope.selected = selected;
                         $scope.broadcast('item.selected',selected);
+                        $scope.selectedRowIndex = 0;
                     }
                     catch (e) {
                         console.log('An error occured while trying to select row.');
                         console.log(e);
                     }
-
                 }
+
             })
             .withTableToolsOption("fnRowDeselected", function (nodes) {
                 $scope.$apply(function() {
