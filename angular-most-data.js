@@ -302,7 +302,7 @@ function DataTableVariantController($scope, $q, $filter, DTOptionsBuilder, DTCol
     //watch options
     $scope.$watch('options', function(value) {
         if (angular.isDefined(value)) {
-            $scope.init(value.$model, value.$view, value.$filter, value.$order,value.$expand);
+            $scope.init(value.$model, value.$view, decodeURIComponent(value.$filter), value.$order,value.$expand);
             $q.when($scope.dtColumns).then(function(value) {
                 $scope.dtColumns = value;
             }, function(reason) {
