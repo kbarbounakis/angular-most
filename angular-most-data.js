@@ -18,7 +18,7 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
 
     $scope.init = function(model, view, filter, order, expand) {
 
-        var q = new ClientDataQueryable(model);
+        var q = new ClientDataQueryable(model), tableInstance;
         q.service = $svc;
         if (filter) {
             q.$filter=filter;
@@ -36,12 +36,13 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                     //set filter and prepare
                     q.$filter = args.filter;
                     q.prepare();
-                    $scope.dtOptions.reloadData();
+                    $scope.$apply(function() {
+                        $scope.filter = args.filter;
+                    });
+                    tableInstance.ajax.reload();
                 }
             }
         });
-
-
 
         var dtOptions = DTOptionsBuilder.newOptions().withFnServerData(function(sSource, aoData, fnCallback, oSettings) {
             var skip = aoData[3].value, top = aoData[4].value;
@@ -150,7 +151,7 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
             .withOption("fnInitComplete", function (oSettings, json) {
                 if (angular.isArray(json.data)) {
 
-                    var tableInstance = oSettings.oInstance.DataTable();
+                    tableInstance = oSettings.oInstance.DataTable();
                     $scope.setRowData = function(index, data) {
                         if (tableInstance) {
                             tableInstance.row(index).data(data);
