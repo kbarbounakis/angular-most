@@ -155,7 +155,7 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                     $scope.setRowData = function(index, data) {
                         if (tableInstance) {
                             tableInstance.row(index).data(data);
-                            tableInstance.draw();
+                            //tableInstance.draw();
                         }
                     }
 
