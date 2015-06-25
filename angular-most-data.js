@@ -298,12 +298,19 @@ function DataTableClientController($scope, $q, $filter, DTOptionsBuilder, DTColu
 
 }
 
+function decodeURIComponentInternal(s) {
+    if (typeof s === 'undefined' || s == null) {
+        return;
+    }
+    return decodeURIComponent(s);
+}
+
 function DataTableVariantController($scope, $q, $filter, DTOptionsBuilder, DTColumnBuilder) {
     DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumnBuilder);
     //watch options
     $scope.$watch('options', function(value) {
         if (angular.isDefined(value)) {
-            $scope.init(value.$model, value.$view, decodeURIComponent(value.$filter), value.$order,value.$expand);
+            $scope.init(value.$model, value.$view, decodeURIComponentInternal(value.$filter), decodeURIComponentInternal(value.$order),decodeURIComponentInternal(value.$expand));
             $q.when($scope.dtColumns).then(function(value) {
                 $scope.dtColumns = value;
             }, function(reason) {
