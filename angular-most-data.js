@@ -220,7 +220,9 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                 if (angular.isObject($scope.dataView)) {
                     var dtColumns = [];
                     dtColumns.name = $scope.dataView.name;
-                    $scope.dataView.fields.forEach(function(field) {
+                    $scope.dataView.fields.filter(function(x) {
+                        return (typeof x.visible === 'undefined') ? true : x.visible;
+                    }).forEach(function(field) {
                         var column = DTColumnBuilder.newColumn(field.name).withTitle(angular.loc(field.title));
                         if (angular.isDefined(field.sortable))
                             if (!field.sortable)
