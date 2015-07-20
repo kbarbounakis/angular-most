@@ -706,8 +706,24 @@ ClientDataQueryable.prototype.prepare = function() {
         else {
             this.$prepared = angular.format('(%s) and (%s)', this.$prepared, this.$filter);
         }
+        delete this.$filter;
     }
     return this;
+};
+
+
+ClientDataQueryable.prototype.toFilter = function() {
+    if (typeof this.$filter !== 'undefined' && this.$filter != null) {
+        if (typeof this.$prepared === 'undefined' || this.$prepared === null) {
+            return this.$filter;
+        }
+        else {
+            return angular.format('(%s) and (%s)', this.$prepared, this.$filter);
+        }
+    }
+    else if(typeof this.$prepared !== 'undefined' && this.$prepared != null) {
+        return this.$prepared;
+    }
 };
 
 /**
@@ -1196,6 +1212,8 @@ function CommonController($scope, $q, $location, $window, $routeParams, $shared,
     $scope.redirect = function(path) {
         $window.location.href = path;
     }
+
+    $scope.location = $location;
 
     $scope.back = function(err) {
         if (err) {

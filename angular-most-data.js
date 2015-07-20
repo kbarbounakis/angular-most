@@ -301,8 +301,16 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
 
 function DataTableClientController($scope, $q, $filter, DTOptionsBuilder, DTColumnBuilder) {
     DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumnBuilder);
-    $scope.init($scope.client.route.current.model, $scope.client.route.current.view, $scope.client.route.$filter, $scope.client.route.current.order,$scope.client.route.current.expand);
-
+    var q = new ClientDataQueryable($scope.client.route.current.model), filter;
+    if (typeof $scope.client.route.current.filter !== 'undefined') {
+        q.filter($scope.client.route.current.filter).prepare();
+    }
+    if (typeof $scope.client.route.$filter !=='undefined') {
+        q.filter($scope.client.route.$filter).prepare();
+    }
+    //get filter
+    filter = q.toFilter();
+    $scope.init($scope.client.route.current.model, $scope.client.route.current.view, filter, $scope.client.route.current.order,$scope.client.route.current.expand);
 }
 
 function decodeURIComponentInternal(s) {
