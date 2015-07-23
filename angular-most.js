@@ -510,7 +510,7 @@ ClientDataQueryable.escape = function(val)
         var minute = ClientDataQueryable.zeroPad(dt.getMinutes(), 2);
         var second = ClientDataQueryable.zeroPad(dt.getSeconds(), 2);
         var millisecond = ClientDataQueryable.zeroPad(dt.getMilliseconds(), 3);
-        val = year + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second + '.' + millisecond;
+        val = "'" + year + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second + '.' + millisecond + "'";
         return val;
     }
 
@@ -775,6 +775,13 @@ ClientDataQueryable.prototype.orElse = function(s) {
  */
 ClientDataQueryable.prototype.take = function(val) {
     this.$top = val;
+    return this;
+}
+/**
+ * @returns ClientDataQueryable
+ */
+ClientDataQueryable.prototype.all = function() {
+    this.$top = -1;
     return this;
 }
 /**
@@ -1951,7 +1958,6 @@ function MostDataInstanceDirective($svc, $shared, $parse) {
         link: function(scope, element, attrs) {
             if (typeof scope.model === 'undefined')
                 return;
-
             scope.route = window.route;
             var q = new ClientDataQueryable(scope.model), arr = [];
             q.service = $svc;
