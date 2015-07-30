@@ -250,12 +250,16 @@ ClientDataService.prototype.schema = function(name, callback) {
 };
 
 ClientDataService.prototype.items = function(options, callback) {
-    var $http = this.$http, $q = this.$q;
-    var deferred = $q.defer();
+    var $http = this.$http,
+        $q = this.$q,
+        deferred = $q.defer(),
+        url = options.$url || "/%s/index.json".replace(/%s/ig, options.$model);
+    //delete privates if any
+    delete options.privates;
     callback = callback || function() {};
     $http({
         method: "GET",
-        url: "/%s/index.json".replace(/%s/ig, options.$model),
+        url: url,
         params: options
     }).then(function (response) {
         callback(null, response.data);
@@ -266,10 +270,13 @@ ClientDataService.prototype.items = function(options, callback) {
 };
 
 ClientDataService.prototype.get = function(options) {
-    var $http = this.$http;
+    var $http = this.$http,
+        url = options.$url || "/%s/index.json".replace(/%s/ig, options.$model);
+    //delete privates if any
+    delete options.privates;
     return $http({
         method: "GET",
-        url: "/%s/index.json".replace(/%s/ig, options.$model),
+        url: url,
         params: options
     }).then(function (response) {
         return response.data;
@@ -279,8 +286,10 @@ ClientDataService.prototype.get = function(options) {
 };
 
 ClientDataService.prototype.save = function(item, options, callback) {
-    var $http = this.$http, $q = this.$q;
-    $http.put(String.format("/%s/edit.json", options.model), item).success(function (data) {
+    var $http = this.$http,
+        $q = this.$q,
+        url = options.$url || "/%s/edit.json".replace(/%s/ig, options.$model);
+    $http.put(url, item).success(function (data) {
         callback(null, data);
     }).error(function (err, status, headers) {
         if (headers("X-Status-Description"))
@@ -288,30 +297,19 @@ ClientDataService.prototype.save = function(item, options, callback) {
         else
             callback(new Error(err));
     });
-    /*$http({
-        method: options.method || 'POST',
-        url: String.format("/%s/edit.json", options.model),
-        data: angular.toParam(item, 'data'),  // pass in data as strings
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }  // set the headers so angular passing info as form data (not request payload)
-    }).success(function (data) {
-        callback(null, data);
-    }).error(function (err, status, headers) {
-        if (headers("X-Status-Description"))
-            callback(new Error(headers("X-Status-Description")));
-        else
-            callback(new Error(err));
-    });*/
 };
 
 ClientDataService.prototype.new = function(item, options, callback) {
-    var $http = this.$http, $q = this.$q;
+    var $http = this.$http,
+        $q = this.$q,
+        url = options.$url || "/%s/new.json".replace(/%s/ig, options.$model);
     //get data
     var data = angular.toParam(item, 'data');
     if (options._CSRFToken)
         data = data + '&_CSRFToken='+options._CSRFToken;
     $http({
         method: options.method || 'POST',
-        url: String.format("/%s/new.json", options.model),
+        url: url,
         data: data,  // pass in data as strings
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }  // set the headers so angular passing info as form data (not request payload)
     }).success(function (data) {
@@ -325,10 +323,11 @@ ClientDataService.prototype.new = function(item, options, callback) {
 };
 
 ClientDataService.prototype.remove = function(item, options, callback) {
-    var $http = this.$http;
+    var $http = this.$http,
+        url = options.$url || "/%s/remove.json".replace(/%s/ig, options.$model);
     $http({
         method:'POST',
-        url: String.format("/%s/remove.json", options.model),
+        url: url,
         data: angular.toParam(item, 'data'),  // pass in data as strings
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     }).success(function (data) {
@@ -344,14 +343,15 @@ ClientDataService.prototype.remove = function(item, options, callback) {
 
 /**
  * @class ClientDataQueryable
- * @param {String=} model the target model
+ * @param {String=} model - The target model
+ * @param {*=} service - The underlying data service
  * @property {Array} items -A collection of object that represents the current dynamic items
  * @property {Array} item - An object that represents the current dynamic item
  * @property {ClientDataService} service - An object that represents the current client data service
  * @property {*} schema - An object that represents the underlying model's schema
  * @constructor
  */
-function ClientDataQueryable(model) {
+function ClientDataQueryable(model, service) {
     /**
      * Gets or sets a string that represents the target model
      * @type {String}
@@ -382,57 +382,64 @@ function ClientDataQueryable(model) {
      */
     this.privates = function() {};
     var svc;
+    svc = service;
     Object.defineProperty(this, 'service', {
         get: function() { return svc;  },
         set: function(value) { svc = value; },
         configurable:false,
         enumerable: false
     });
-    var self = this;
+    var self = this, __items, __item;
     self.privates = function() {};
 
     Object.defineProperty(self, 'items', {
         get: function() {
-            if (typeof self.privates.items === 'undefined') {
+            if (typeof __items === 'undefined') {
                 var deferred = self.service.$q.defer();
-                self.privates.items =  deferred.promise;
-                self.service.items(angular.isDefined(self.$prepared) ? self.copy() : self, function(err, result) {
+                __items =  deferred.promise;
+                var copy = self.copy();
+                delete copy.privates;
+                self.service.items(copy, function(err, result) {
                     if (err) {
                         console.log(err);
-                        self.privates.items = null;
+                        __items = null;
                         deferred.reject(err);
                     }
                     else {
-                        self.privates.items = result;
+                        __items = result;
                         deferred.resolve(result);
                     }
                 });
             }
-            return self.privates.items;
+            return __items;
         },
-        set: function(value) { self.privates.items = value; }
+        set: function(value) {
+            __items = value;
+        }
     });
 
     Object.defineProperty(self, 'item', {
         get: function() {
-            if (typeof self.privates.item === 'undefined') {
+            if (typeof __item === 'undefined') {
                 var deferred = self.service.$q.defer();
-                self.privates.item =  deferred.promise;
-                self.service.items(angular.isDefined(self.$prepared) ?  self.first().copy() : self.first(), function(err, result) {
+                __item =  deferred.promise;
+                var copy = self.first().copy();
+                delete copy.privates;
+                self.service.items(copy, function(err, result) {
                     if (err) {
                         console.log(err);
-                        self.privates.item = null;
+                        __item = null;
                         deferred.reject(err);
                     }
                     else {
-                        self.privates.item = result[0];
+                        __item = result[0];
                         deferred.resolve(result[0]);
                     }
                 });
             }
-            return self.privates.item;
+            return __item;
         },
-        set: function(value) { self.privates.item = value; }
+        set: function(value) { __item = value; }
     });
 
     /**
@@ -453,10 +460,22 @@ function ClientDataQueryable(model) {
 
 }
 
+/**
+ * @param {string} s
+ * @returns {ClientDataQueryable|string}
+ */
+ClientDataQueryable.prototype.url = function(s) {
+    if (typeof s === 'undefined') { return this.$url; }
+    if (s==null) { delete this.$url; return this; }
+    this.$url = s;
+    return this;
+};
+
 ClientDataQueryable.prototype.data = function() {
     var self = this;
-    var deferred = self.service.$q.defer();
-    self.service.items(angular.isDefined(self.$prepared) ? self.copy() : self, function(err, result) {
+    var deferred = self.service.$q.defer(), options = self.copy();
+    delete options.privates;
+    self.service.items(options, function(err, result) {
         if (err) {
             console.log(err);
             deferred.reject(err);
@@ -466,12 +485,12 @@ ClientDataQueryable.prototype.data = function() {
         }
     });
     return deferred.promise;
-}
+};
 
 ClientDataQueryable.prototype.reset = function() {
-    delete this.privates.items; delete this.privates.item;
+    this.items = (function(){})(); this.item=(function(){})();
     return this;
-}
+};
 
 ClientDataQueryable.prototype.copy = function() {
     var self = this, result = new ClientDataQueryable();
@@ -636,9 +655,9 @@ ClientDataQueryable.prototype.paged = function(value) {
  * @returns {ClientDataQueryable}
  */
 ClientDataQueryable.prototype.asArray = function(value) {
-    this.$array = value
+    this.$array = value;
     return this;
-}
+};
 
 /**
  * @param {Array|String} attr
@@ -830,6 +849,7 @@ ClientDataQueryable.prototype.thenBy = function(name) {
     if (typeof name !=='undefined' || name!=null) {
         this.$orderby += (this.$orderby ? ',' + name.toString() : name.toString());
     }
+    return this;
 }
 
 /**
@@ -840,6 +860,7 @@ ClientDataQueryable.prototype.thenByDescending = function(name) {
     if (typeof name !=='undefined' || name!=null) {
         this.$orderby += (this.$orderby ? ',' + name.toString() : name.toString()) + ' desc';
     }
+    return this;
 }
 
 /**
@@ -1954,13 +1975,16 @@ function MostTypeaheadDirective($compile, $svc) {
 function MostDataInstanceDirective($svc, $shared, $parse) {
     return {
         restrict: 'E',
-        scope: { model:'@', filter:'@',  select:'@', group:'@', order:'@', top:'@', skip:'@', expand:'@', prepared:'@' },
+        scope: { model:'@', filter:'@',  select:'@', group:'@', order:'@', top:'@', inlinecount:'@', paged:'@', skip:'@', expand:'@', prepared:'@', url:'@' },
         link: function(scope, element, attrs) {
             if (typeof scope.model === 'undefined')
                 return;
             scope.route = window.route;
             var q = new ClientDataQueryable(scope.model), arr = [];
             q.service = $svc;
+            if (angular.isNotEmptyString(scope.url)) {
+                q.url(scope.url);
+            }
             //apply select (if any)
             if (scope.select)
             {
@@ -2004,6 +2028,12 @@ function MostDataInstanceDirective($svc, $shared, $parse) {
             }
             if (parseInt(scope.top)>0) {
                 q.take(parseInt(scope.top));
+            }
+            if (/^true$/i.test(scope.inlinecount)) {
+                q.paged(true);
+            }
+            if (/^true$/i.test(scope.paged)) {
+                q.paged(true);
             }
             if (angular.isNotEmptyString(scope.filter)) {
                 q.filter(scope.filter);
@@ -2064,9 +2094,7 @@ function MostDataInstanceDirective($svc, $shared, $parse) {
                             scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
                         });
                     }
-
                 }
-
             });
 
             //register for filter change
@@ -2086,7 +2114,22 @@ function MostDataInstanceDirective($svc, $shared, $parse) {
                         scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
                     });
                 }
+            });
 
+            //register for filter change
+            scope.$on('page.change', function(event, args)
+            {
+                if (typeof args === 'object') {
+                    if (args.name==attrs.name) {
+                        if (typeof args.page !== 'undefined') {
+                            var page = parseInt(args.page), size = parseInt(scope.top);
+                            if (size<=0) { return; }
+                            q.reset().skip((page-1)*size).items.then(function(result) {
+                                scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
+                            });
+                        }
+                    }
+                }
             });
 
             var dataReload = function(event, args)
