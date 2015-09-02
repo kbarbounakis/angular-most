@@ -228,6 +228,24 @@ if (typeof String.format !== 'function') {
     }
 }
 
+function UrlPropertyDescriptor(obj) {
+    return {
+        get: function() {
+            if (typeof obj === 'undefined' || obj == null) { return; }
+            return (typeof obj.url === 'function') ? obj.url() : (obj.url || obj.$url);
+        }
+    }
+}
+
+function ModelPropertyDescriptor(obj) {
+    return {
+        get: function() {
+            if (typeof obj === 'undefined' || obj == null) { return; }
+            return (typeof obj.model === 'function') ? obj.model() : (obj.model || obj.$model);
+        }
+    }
+}
+
 function ClientDataService($http, $q) {
     this.$http = $http;
     this.$q = $q;
@@ -253,7 +271,7 @@ ClientDataService.prototype.items = function(options, callback) {
     var $http = this.$http,
         $q = this.$q,
         deferred = $q.defer(),
-        url = options.$url || "/%s/index.json".replace(/%s/ig, options.$model);
+        url = UrlPropertyDescriptor(options).get() || "/%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     //delete privates if any
     delete options.privates;
     callback = callback || function() {};
@@ -271,7 +289,7 @@ ClientDataService.prototype.items = function(options, callback) {
 
 ClientDataService.prototype.get = function(options) {
     var $http = this.$http,
-        url = options.$url || "/%s/index.json".replace(/%s/ig, options.$model);
+        url = UrlPropertyDescriptor(options).get() || "/%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     //delete privates if any
     delete options.privates;
     return $http({
@@ -286,9 +304,8 @@ ClientDataService.prototype.get = function(options) {
 };
 
 ClientDataService.prototype.save = function(item, options, callback) {
-    var $http = this.$http,
-        $q = this.$q,
-        url = options.$url || "/%s/edit.json".replace(/%s/ig, options.$model);
+    var $http = this.$http;
+    var url = UrlPropertyDescriptor(options).get() || "/%s/edit.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     $http.put(url, item).success(function (data) {
         callback(null, data);
     }).error(function (err, status, headers) {
@@ -302,7 +319,7 @@ ClientDataService.prototype.save = function(item, options, callback) {
 ClientDataService.prototype.new = function(item, options, callback) {
     var $http = this.$http,
         $q = this.$q,
-        url = options.$url || "/%s/new.json".replace(/%s/ig, options.$model);
+        url = UrlPropertyDescriptor(options).get() || "/%s/new.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     //get data
     var data = angular.toParam(item, 'data');
     if (options._CSRFToken)
@@ -324,7 +341,7 @@ ClientDataService.prototype.new = function(item, options, callback) {
 
 ClientDataService.prototype.remove = function(item, options, callback) {
     var $http = this.$http,
-        url = options.$url || "/%s/remove.json".replace(/%s/ig, options.$model);
+        url = UrlPropertyDescriptor(options).get() || "/%s/remove.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     $http({
         method:'POST',
         url: url,
@@ -340,11 +357,310 @@ ClientDataService.prototype.remove = function(item, options, callback) {
     });
 };
 
+/**
+ * @class {MostDataField}
+ * @param name
+ * @constructor
+ */
+function MostDataField(name) {
+    if (typeof name !== 'string') {
+        throw new Error('Invalid argument type. Expected string.')
+    }
+    this.name = name;
+}
+
+/**
+ * @returns {MostDataField}
+ */
+MostDataField.prototype.as = function(s) {
+    if (typeof s === 'undefined' || s==null) {
+        delete this.$as;
+        return this;
+    }
+    this.$as = s;
+    return this;
+};
+
+/**
+ * Returns the alias expression, if any.
+ * @returns {string}
+ * @private
+ */
+MostDataField.prototype._as = function() {
+    return angular.isNotEmptyString(this.$as) ? ' as ' + this.$as : '';
+};
+
+MostDataField.prototype.toString = function() {
+    return this.name + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.max = function() {
+    return String.prototype.format('max(%s)', this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.min = function() {
+    return String.prototype.format('min(%s)', this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.count = function() {
+    return String.prototype.format('count(%s)', this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.average = function() {
+    return String.prototype.format('avg(%s)', this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.length = function() {
+    return String.prototype.format('length(%s)', this.name) + this._as();
+};
+
+/**
+ * @param {String} s
+ * @returns {string}
+ */
+MostDataField.prototype.indexOf = function(s) {
+    return String.prototype.format('indexof(%s,%s)', this.name, MostClientDataQueryable.escape(s)) + this._as();
+};
+
+/**
+ * @param {number} pos
+ * @param {number} length
+ * @returns {string}
+ */
+MostDataField.prototype.substr = function(pos, length) {
+    return String.prototype.format('substring(%s,%s,%s)',this.name, pos, length) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.floor = function() {
+    return String.prototype.format('floor(%s)',this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.round = function() {
+    return String.prototype.format('round(%s)',this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.getYear = function() {
+    return String.prototype.format('year(%s)',this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.getDay = function() {
+    return String.prototype.format('day(%s)',this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.getMonth = function() {
+    return String.prototype.format('month(%s)',this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.getMinutes = function() {
+    return String.prototype.format('minute(%s)',this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.getHours = function() {
+    return String.prototype.format('hour(%s)',this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.getSeconds = function() {
+    return String.prototype.format('second(%s)',this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.getDate = function() {
+    return String.prototype.format('date(%s)',this.name) + this._as();
+};
+
+///**
+// * @returns {string}
+// */
+//MostDataField.prototype.ceil = function() {
+//    return String.prototype.format('ceil(%s)',this.name);
+//};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.toLocaleLowerCase = function() {
+    return String.prototype.format('tolower(%s)',this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.toLowerCase = function() {
+    return String.prototype.format('tolower(%s)',this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.toLocaleUpperCase = function() {
+    return String.prototype.format('toupper(%s)',this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.toUpperCase = function() {
+    return String.prototype.format('toupper(%s)',this.name) + this._as();
+};
+
+/**
+ * @returns {string}
+ */
+MostDataField.prototype.trim = function() {
+    return String.prototype.format('trim(%s)',this.name) + this._as();
+};
+
+/**
+ * @param {*} s0
+ * @returns {string}
+ */
+MostDataField.prototype.concat = function(s0) {
+    var res = 'concat(' + this.name;
+    for (var i = 0; i < arguments.length; i++) {
+        res += ',' + MostClientDataQueryable.escape(s);
+    }
+    res += ')';
+    return res;
+};
+
+///**
+// * @param {*} s
+// * @returns {string}
+// */
+//MostDataField.prototype.substring = function(s) {
+//    return String.prototype.format('substringof(%s,%s)',this.name,MostClientDataQueryable.escape(s));
+//};
+
+/**
+ * @param {*} s
+ * @returns {string}
+ */
+MostDataField.prototype.endsWith = function(s) {
+    return String.prototype.format('endswith(%s,%s)',this.name, MostClientDataQueryable.escape(s)) + this._as();
+};
+
+/**
+ * @param {*} s
+ * @returns {string}
+ */
+MostDataField.prototype.startsWith = function(s) {
+    return String.prototype.format('startswith(%s,%s)',this.name, MostClientDataQueryable.escape(s)) + this._as();
+};
+
+if (typeof String.prototype.fieldOf === 'undefined')
+{
+    /**
+     * @returns {MostDataField}
+     */
+    var fieldOf = function() {
+        if (this == null) {
+            throw new TypeError('String.prototype.fieldOf called on null or undefined');
+        }
+        return new MostDataField(this);
+    };
+    if (!String.prototype.fieldOf) { String.prototype.fieldOf = fieldOf; }
+}
+
+if (typeof String.prototype.format === 'undefined')
+{
+    /**
+     * @returns {*}
+     */
+    var format = function(f) {
+        var i;
+        if (typeof f !== 'string') {
+            var objects = [];
+            for (i  = 0; i < arguments.length; i++) {
+                objects.push(inspect(arguments[i]));
+            }
+            return objects.join(' ');
+        }
+        i = 1;
+        var args = arguments;
+        var len = args.length;
+        var str = String(f).replace(/%[sdj%]/g, function (x) {
+            if (x === '%%') return '%';
+            if (i >= len) return x;
+            switch (x) {
+                case '%s':
+                    return String(args[i++]);
+                case '%d':
+                    return Number(args[i++]);
+                case '%j':
+                    return JSON.stringify(args[i++]);
+                default:
+                    return x;
+            }
+        });
+        for (var x = args[i]; i < len; x = args[++i]) {
+            if (x === null || typeof x !== 'object') {
+                str += ' ' + x;
+            } else {
+                str += ' ' + inspect(x);
+            }
+        }
+        return str;
+    };
+    if (!String.prototype.format) { String.prototype.format = format; }
+}
 
 /**
  * @class ClientDataQueryable
  * @param {String=} model - The target model
  * @param {*=} service - The underlying data service
+ * @property {string} url - Gets or sets a string that represents the base service url
+ * @property {string} $filter - Gets or sets a string that represents a query expression e.g. name eq 'John'
+ * @property {string} $select - Gets or sets a comma delimited string that represents the fields to be returned e.g. id,name,description
+ * @property {string} $groupby - Gets or sets a comma delimited string that represents the fields to be used in group expression e.g. id,name
+ * @property {string} $orderby - Gets or sets a comma delimited string that represents the fields to be used in order expression e.g. name desc,type asc
+ * @property {string} $prepared - Gets or sets a string that represents a prepared query expression
+ * @property {string} $expand - Gets or sets a comma delimited string that represents an array of fields to be expanded e.g. type,members
+ * @property {string} $model - Gets or sets a string that represents the current model name
+ * @property {number} $top - Gets or sets an integer that represents the number of records to be retrieved
+ * @property {number} $skip - Gets or sets an integer that represents the number of records to be skipped
+ * @property {boolean} $array - Gets or sets a boolean that indicates whether the result will be treated as array
+ * @property {boolean} $inlinecount - Gets or sets a boolean that indicates whether paging parameters will be included in the result.
  * @property {Array} items -A collection of object that represents the current dynamic items
  * @property {Array} item - An object that represents the current dynamic item
  * @property {ClientDataService} service - An object that represents the current client data service
@@ -357,26 +673,6 @@ function ClientDataQueryable(model, service) {
      * @type {String}
      */
     this.$model = model;
-    /**
-     * @type {String}
-     */
-    this.$filter = undefined;
-    /**
-     * @type {String}
-     */
-    this.$prepared = undefined;
-    /**
-     * @type {number}
-     */
-    this.$top = undefined;
-    /**
-     * @type {number}
-     */
-    this.$skip = undefined;
-    /**
-     * @type {Boolean}
-     */
-    this.$array = false;
     /**
      * @private
      */
@@ -466,8 +762,11 @@ function ClientDataQueryable(model, service) {
  */
 ClientDataQueryable.prototype.url = function(s) {
     if (typeof s === 'undefined') { return this.$url; }
-    if (s==null) { delete this.$url; return this; }
+    if (typeof s !== 'string') {
+        throw new Error('Invalid argument type. Expected string.');
+    }
     this.$url = s;
+    delete this.$model;
     return this;
 };
 
@@ -507,7 +806,7 @@ ClientDataQueryable.prototype.copy = function() {
         delete result.$prepared;
     }
     return result;
-}
+};
 
 ClientDataQueryable.escape = function(val)
 {
@@ -529,12 +828,15 @@ ClientDataQueryable.escape = function(val)
         var minute = ClientDataQueryable.zeroPad(dt.getMinutes(), 2);
         var second = ClientDataQueryable.zeroPad(dt.getSeconds(), 2);
         var millisecond = ClientDataQueryable.zeroPad(dt.getMilliseconds(), 3);
-        val = "'" + year + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second + '.' + millisecond + "'";
+        //format timezone
+        var offset = (new Date()).getTimezoneOffset(),
+            timezone = (offset>=0 ? '+' : '') + ClientDataQueryable.zeroPad(Math.floor(offset/60),2) + ':' + MostClientDataQueryable.zeroPad(offset%60,2);
+        val = "'" + year + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second + '.' + millisecond + timezone + "'";
         return val;
     }
 
     if (typeof val === 'object' && Object.prototype.toString.call(val) === '[object Array]') {
-        var values = []
+        var values = [];
         val.forEach(function(x) {
             ClientDataQueryable.escape(x);
         });
@@ -561,7 +863,7 @@ ClientDataQueryable.escape = function(val)
         }
     });
     return "'"+val+"'";
-}
+};
 
 ClientDataQueryable.zeroPad = function(number, length) {
     number = number || 0;
@@ -570,7 +872,7 @@ ClientDataQueryable.zeroPad = function(number, length) {
         res = '0' + res;
     }
     return res;
-}
+};
 
 /**
  * @private
@@ -578,14 +880,14 @@ ClientDataQueryable.zeroPad = function(number, length) {
  */
 ClientDataQueryable.prototype.append = function() {
 
-    var self = this;
+    var self = this, exprs;
     if (self.privates.left) {
         var expr = null;
 
         if (self.privates.op=='in') {
             if (Array.isArray(self.privates.right)) {
                 //expand values
-                var exprs = [];
+                exprs = [];
                 self.privates.right.forEach(function(x) {
                     exprs.push(self.privates.left + ' eq ' + ClientDataQueryable.escape(x));
                 });
@@ -596,7 +898,7 @@ ClientDataQueryable.prototype.append = function() {
         else if (self.privates.op=='nin') {
             if (Array.isArray(self.privates.right)) {
                 //expand values
-                var exprs = [];
+                exprs = [];
                 self.privates.right.forEach(function(x) {
                     exprs.push(self.privates.left + ' ne ' + ClientDataQueryable.escape(x));
                 });
@@ -623,15 +925,23 @@ ClientDataQueryable.prototype.append = function() {
     delete self.privates.lop;delete self.privates.left; delete self.privates.op; delete self.privates.right;
     return this;
 };
-
-ClientDataQueryable.prototype.model = function(name) {
-    if (typeof name !== 'undefined' && name !=null)
-        this.$model = name;
-    return this;
-}
 /**
  *
- * @param {Boolean=|*=} value
+ * @param {string} name
+ * @returns {ClientDataQueryable|string}
+ */
+ClientDataQueryable.prototype.model = function(name) {
+    if (typeof name === 'undefined') { return this.$model; }
+    if (typeof name !== 'string') {
+        throw new Error('Invalid argument type. Expected string.');
+    }
+    this.$model = name;
+    delete this.$url;
+    return this;
+};
+/**
+ *
+ * @param {Boolean|*=} value
  * @returns {ClientDataQueryable}
  */
 ClientDataQueryable.prototype.inlineCount = function(value) {
@@ -670,7 +980,7 @@ ClientDataQueryable.prototype.select = function(attr) {
     else
         this.$select = attr;
     return this;
-}
+};
 
 /**
  * @param {Array|String} attr
@@ -683,7 +993,7 @@ ClientDataQueryable.prototype.group = function(attr) {
     else
         this.$groupby = attr;
     return this;
-}
+};
 
 /**
  * @param {Array|String} entities
@@ -696,7 +1006,7 @@ ClientDataQueryable.prototype.expand = function(entities) {
     else
         this.$expand = entities;
     return this;
-}
+};
 
 
 /**
@@ -902,218 +1212,12 @@ ClientDataQueryable.prototype.or = function(name) {
 ClientDataQueryable.prototype.equal = function(value) {
     this.privates.op = Array.isArray(value) ? 'eq' : 'eq';
     this.privates.right = value; return this.append();
-}
+};
 
-/**
- * @param {String} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.indexOf = function(name, s) {
-    this.privates.left = 'indexof(' + name + ', ' + ClientDataQueryable.escape(s) +')';
-    return this;
-}
-
-/**
- * @param {String} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.andIndexOf = function(name, s) {
-    this.privates.lop = 'and';
-    return this.indexOf(name, s);
-}
-
-/**
- * @param {String} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.orIndexOf = function(name, s) {
-    this.privates.lop = 'or';
-    return this.indexOf(name, s);
-}
-
-/**
- * @param {*} name
- * @param {*} s
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.endsWith = function(name, s) {
-    this.privates.left = String.format('endswith(%s,%s)',name,ClientDataQueryable.escape(s));
-    return this;
-}
-
-/**
- * @param {*} name
- * @param {*} s
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.startsWith = function(name, s) {
-    this.privates.left = String.format('startswith(%s,%s)',name,ClientDataQueryable.escape(s));
-    return this;
-}
-
-/**
- * @param {*} name
- * @param {*} s
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.substringOf = function(name, s) {
-    this.privates.left = String.format('substringof(%s,%s)',name,ClientDataQueryable.escape(s));
-    return this;
-}
-
-/**
- * @param {*} name
- * @param {number} pos
- * @param {number} length
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.substring = function(name, pos, length) {
-    this.privates.left = String.format('substring(%s,%s,%s)',name,pos,length);
-    return this;
-}
-
-/**
- * @param {*} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.length = function(name) {
-    this.privates.left = String.format('length(%s)',name);
-    return this;
-}
-
-/**
- * @param {*} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.toLower = function(name) {
-    this.privates.left = String.format('tolower(%s)',name);
-    return this;
-}
-
-/**
- * @param {*} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.toUpper = function(name) {
-    this.privates.left = String.format('toupper(%s)',name);
-    return this;
-}
-
-/**
- * @param {*} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.trim = function(name) {
-    this.privates.left = String.format('trim(%s)',name);
-    return this;
-}
-
-/**
- * @param {*} s0
- * @param {*} s1
- * @param {*=} s2
- * @param {*=} s3
- * @param {*=} s4
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.concat = function(s0, s1, s2, s3, s4) {
-    this.privates.left = 'concat(' + ClientDataQueryable.escape(s0) + ',' + ClientDataQueryable.escape(s1);
-    if (typeof s2 !== 'undefined')
-        this.privates.left +=',' + ClientDataQueryable.escape(s2);
-    if (typeof s3 !== 'undefined')
-        this.privates.left +=',' + ClientDataQueryable.escape(s3)
-    if (typeof s4 !== 'undefined')
-        this.privates.left +=',' + ClientDataQueryable.escape(s4)
-    this.privates.left +=')';
-    return this;
-}
 
 ClientDataQueryable.prototype.field = function(name) {
     return { "$name":name }
-}
-
-/**
- * @param {String} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.day = function(name) {
-    this.privates.left = String.format('day(%s)',name);
-    return this;
-}
-
-/**
- * @param {String} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.day = function(name) {
-    this.privates.left = String.format('hour(%s)',name);
-    return this;
-}
-
-/**
- * @param {String} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.minute = function(name) {
-    this.privates.left = String.format('minute(%s)',name);
-    return this;
-}
-
-/**
- * @param {String} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.month = function(name) {
-    this.privates.left = String.format('month(%s)',name);
-    return this;
-}
-
-
-/**
- * @param {String} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.second = function(name) {
-    this.privates.left = String.format('second(%s)',name);
-    return this;
-}
-
-
-/**
- * @param {String} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.year = function(name) {
-    this.privates.left = String.format('year(%s)',name);
-    return this;
-}
-
-/**
- * @param {String} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.round = function(name) {
-    this.privates.left = String.format('round(%s)',name);
-    return this;
-}
-
-/**
- * @param {String} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.floor = function(name) {
-    this.privates.left = String.format('floor(%s)',name);
-    return this;
-}
-
-/**
- * @param {String} name
- * @returns ClientDataQueryable
- */
-ClientDataQueryable.prototype.ceiling = function(name) {
-    this.privates.left = util.ceiling('floor(%s)',name);
-    return this;
-}
+};
 
 /**
  * @param {*} value
@@ -1122,7 +1226,7 @@ ClientDataQueryable.prototype.ceiling = function(name) {
 ClientDataQueryable.prototype.notEqual = function(value) {
     this.privates.op = Array.isArray(value) ? 'nin' : 'ne';
     this.privates.right = value; return this.append();
-}
+};
 
 
 /**
