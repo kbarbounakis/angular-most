@@ -309,10 +309,13 @@ ClientDataService.prototype.save = function(item, options, callback) {
     $http.put(url, item).success(function (data) {
         callback(null, data);
     }).error(function (err, status, headers) {
+        var er;
         if (headers("X-Status-Description"))
-            callback(new Error(headers("X-Status-Description")));
+            er = new Error(headers("X-Status-Description"));
         else
-            callback(new Error(err));
+            er =new Error(err);
+        er.status = status;
+        callback(er);
     });
 };
 
@@ -1243,7 +1246,7 @@ ClientDataQueryable.prototype.greaterThan = function(value) {
  */
 ClientDataQueryable.prototype.greaterOrEqual = function(value) {
     this.privates.op = 'ge';this.privates.right = value; return this.append();
-}
+};
 
 /**
  * @param {*} value
@@ -1251,7 +1254,7 @@ ClientDataQueryable.prototype.greaterOrEqual = function(value) {
  */
 ClientDataQueryable.prototype.lowerThan = function(value) {
     this.privates.op = 'lt';this.privates.right = value; return this.append();
-}
+};
 
 /**
  * @param {*} value
@@ -1259,7 +1262,18 @@ ClientDataQueryable.prototype.lowerThan = function(value) {
  */
 ClientDataQueryable.prototype.lowerOrEqual = function(value) {
     this.privates.op = 'le';this.privates.right = value; return this.append();
-}
+};
+
+/**
+ * @param {*} value
+ * @returns ClientDataQueryable
+ */
+ClientDataQueryable.prototype.contains = function(value) {
+    this.privates.op = 'ge';
+    this.privates.left = angular.format('indexof(%s,%s)', this.privates.left, ClientDataQueryable.escape(value));
+    this.privates.right = 0;
+    return this.append();
+};
 
 function QueryableController($scope, $svc)
 {
@@ -1346,6 +1360,12 @@ function CommonController($scope, $q, $location, $window, $routeParams, $shared,
     }
 
     $scope.location = $location;
+    $scope.location.encodedUrl = function() {
+        return encodeURIComponent('#' + $location.url())
+    };
+    $scope.location.encodedAbsUrl = function() {
+        return encodeURIComponent($location.absUrl())
+    };
 
     $scope.back = function(err) {
         if (err) {
@@ -1785,21 +1805,30 @@ function ItemController($scope, $q, $location, $svc, $window, $shared, $routePar
 
 
     $scope.save = function(callback) {
-        callback = callback || function() {};
         $svc.save($scope.item, { model:$scope.model }, function(err, result) {
             if (err) {
                 $scope.submitted = false;
                 $scope.messages=angular.localized(err.message);
                 //invoke callback with error
-                callback(err);
+                if (typeof callback === 'function') {
+                    return callback(err);
+                }
+                else {
+                    //raise error event
+                    if ($shared) {
+                        $scope.state = $scope.state || 'save';
+                        $shared.broadcast('item.error', { model:$scope.model, data:$scope.item, error:err });
+                    }
+                }
             }
             else {
                 $scope.showNew = false;
                 $scope.submitted = true;
                 $scope.item = result;
                 //invoke callback
-                callback(null, result);
-
+                if (typeof callback === 'function') {
+                    return callback(null, result);
+                }
                 //broadcast item.new event
                 if ($shared) {
                     $scope.state = $scope.state || 'save';
@@ -1924,6 +1953,9 @@ function MostVariableDirective($q, $parse) {
     return {
         restrict: 'E',
         link: function(scope, element, attrs) {
+            if (attrs.ngValue) {
+                return scope.$eval(attrs.name + "=" + attrs.ngValue + ";");
+            }
             scope.$watch(attrs.value, function(newValue) {
                 scope[attrs.name] = newValue;
             });
