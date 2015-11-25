@@ -1956,8 +1956,18 @@ function MostVariableDirective($q, $parse) {
             if (attrs.ngValue) {
                 return scope.$eval(attrs.name + "=" + attrs.ngValue + ";");
             }
+            function set_(value) {
+                if (scope.$$phase === '$digest' || scope.$$phase === '$apply') {
+                    $timeout(function() {
+                        scope[attrs.name] = value;
+                    });
+                }
+                else {
+                    scope[attrs.name] = value;
+                }
+            }
             scope.$watch(attrs.value, function(newValue) {
-                scope[attrs.name] = newValue;
+                set_(newValue);
             });
         }
     };
