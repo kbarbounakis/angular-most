@@ -1949,7 +1949,7 @@ function MostItemDirective($q, $parse) {
     };
 }
 
-function MostVariableDirective($q, $parse) {
+function MostVariableDirective($q, $parse, $timeout) {
     return {
         restrict: 'E',
         link: function(scope, element, attrs) {
