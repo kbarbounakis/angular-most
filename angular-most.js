@@ -249,6 +249,7 @@ function ModelPropertyDescriptor(obj) {
 function ClientDataService($http, $q) {
     this.$http = $http;
     this.$q = $q;
+    this.base = "/";
 }
 
 ClientDataService.prototype.schema = function(name, callback) {
@@ -258,7 +259,7 @@ ClientDataService.prototype.schema = function(name, callback) {
     $http({
         method: "GET",
         cache: true,
-        url: "/%s/schema.json".replace(/%s/ig, name)
+        url: this.getBase() + "%s/schema.json".replace(/%s/ig, name)
     }).then(function (response) {
         callback(null, response.data);
     }, function (err) {
@@ -267,11 +268,25 @@ ClientDataService.prototype.schema = function(name, callback) {
     return deferred.promise;
 };
 
+ClientDataService.prototype.getBase = function() {
+    if (angular.isNotEmptyString(this.base)) {
+        if (this.base.lastIndexOf("/")==this.base.length) {
+            return this.base;
+        }
+        else {
+            return this.base + "/";
+        }
+    }
+    else {
+        return "/";
+    }
+};
+
 ClientDataService.prototype.items = function(options, callback) {
     var $http = this.$http,
         $q = this.$q,
         deferred = $q.defer(),
-        url = UrlPropertyDescriptor(options).get() || "/%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
+        url = UrlPropertyDescriptor(options).get() ||  this.getBase() + "%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     //delete privates if any
     delete options.privates;
     callback = callback || function() {};
@@ -289,7 +304,7 @@ ClientDataService.prototype.items = function(options, callback) {
 
 ClientDataService.prototype.get = function(options) {
     var $http = this.$http,
-        url = UrlPropertyDescriptor(options).get() || "/%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
+        url = UrlPropertyDescriptor(options).get() || this.getBase() + "%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     //delete privates if any
     delete options.privates;
     return $http({
@@ -305,7 +320,7 @@ ClientDataService.prototype.get = function(options) {
 
 ClientDataService.prototype.save = function(item, options, callback) {
     var $http = this.$http;
-    var url = UrlPropertyDescriptor(options).get() || "/%s/edit.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
+    var url = UrlPropertyDescriptor(options).get() || this.getBase() + "%s/edit.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     $http.put(url, item).success(function (data) {
         callback(null, data);
     }).error(function (err, status, headers) {
@@ -322,7 +337,7 @@ ClientDataService.prototype.save = function(item, options, callback) {
 ClientDataService.prototype.new = function(item, options, callback) {
     var $http = this.$http,
         $q = this.$q,
-        url = UrlPropertyDescriptor(options).get() || "/%s/new.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
+        url = UrlPropertyDescriptor(options).get() || this.getBase() + "%s/new.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     //get data
     var data = angular.toParam(item, 'data');
     if (options._CSRFToken)
@@ -2511,7 +2526,9 @@ var most = angular.module('most', ['ngRoute']);
 //
 //services
 most.factory('$svc', function ($http, $q) {
-        return new ClientDataService($http, $q);
+        var svc = new ClientDataService($http, $q);
+        svc.base = "/";
+        return svc;
     }).factory('$shared',function ($rootScope, $location, $routeParams) {
         return new MostSharedService($rootScope, $location, $routeParams);
     });
