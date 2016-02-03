@@ -1216,7 +1216,7 @@ ClientDataQueryable.prototype.select = function(attr) {
     delete this.$select;
     if (typeof attr === 'undefined' || attr == null) { return this; }
     //backward compatibility (version <1.20)
-    if (typeof attr ===  "[object Array]") {
+    if (attr instanceof Array) {
         return ClientDataQueryable.prototype.select.apply(this, attr);
     }
     var arg = Array.prototype.slice.call(arguments);
@@ -1241,7 +1241,7 @@ ClientDataQueryable.prototype.groupBy = function(attr) {
     delete this.$groupby;
     if (typeof attr === 'undefined' || attr == null) { return this; }
     //backward compatibility (version <1.20)
-    if (typeof attr ===  "[object Array]") {
+    if (attr instanceof Array) {
         return ClientDataQueryable.prototype.groupBy.apply(this, attr);
     }
     var arg = Array.prototype.slice.call(arguments);
@@ -1275,7 +1275,7 @@ ClientDataQueryable.prototype.expand = function(attr) {
     delete this.$expand;
     if (typeof attr === 'undefined' || attr == null) { return this; }
     //backward compatibility (version <1.20)
-    if (typeof attr ===  "[object Array]") {
+    if (attr instanceof Array) {
         return ClientDataQueryable.prototype.expand.apply(this, attr);
     }
     var arg = Array.prototype.slice.call(arguments);
