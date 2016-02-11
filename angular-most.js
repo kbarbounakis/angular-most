@@ -299,7 +299,7 @@ ClientDataService.prototype.items = function(options, callback) {
     var $http = this.$http,
         $q = this.$q,
         deferred = $q.defer(),
-        url = UrlPropertyDescriptor(options).get() ||  "/%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
+        url = UrlPropertyDescriptor(options).get() || this.getBase() +  "%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     //delete privates_ if any
     delete options.privates_;
     callback = callback || function() {};
@@ -318,7 +318,7 @@ ClientDataService.prototype.items = function(options, callback) {
 
 ClientDataService.prototype.get = function(options) {
     var $http = this.$http,
-        url = UrlPropertyDescriptor(options).get() || "/%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
+        url = UrlPropertyDescriptor(options).get() || this.getBase() + "%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     //delete privates_ if any
     delete options.privates_;
     return $http({
@@ -335,7 +335,7 @@ ClientDataService.prototype.get = function(options) {
 
 ClientDataService.prototype.save = function(item, options, callback) {
     var $http = this.$http;
-    var url = UrlPropertyDescriptor(options).get() || this.getBase() + "/%s/edit.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
+    var url = UrlPropertyDescriptor(options).get() || this.getBase() + "%s/edit.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     $http.put(url, item).success(function (data) {
         callback(null, data);
     }).error(function (err, status, headers) {
@@ -351,7 +351,7 @@ ClientDataService.prototype.save = function(item, options, callback) {
 
 ClientDataService.prototype.new = function(item, options, callback) {
     var $http = this.$http,
-        url = UrlPropertyDescriptor(options).get() || "/%s/new.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
+        url = UrlPropertyDescriptor(options).get() || this.getBase() + "%s/new.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     //get data
     var data = angular.toParam(item, 'data');
     if (typeof options["_CSRFToken"] === "string")
@@ -373,7 +373,7 @@ ClientDataService.prototype.new = function(item, options, callback) {
 
 ClientDataService.prototype.remove = function(item, options, callback) {
     var $http = this.$http,
-        url = UrlPropertyDescriptor(options).get() || "/%s/remove.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
+        url = UrlPropertyDescriptor(options).get() || this.getBase() +  "%s/remove.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     $http({
         method:'POST',
         url: this.resolveUrl(url),
