@@ -280,18 +280,15 @@ function ClientDataService($http, $q) {
 ClientDataService.prototype.schema = function(name, callback) {
     var $http = this.$http, $q = this.$q;
     callback = callback || function() {};
-    var deferred = $q.defer();
     $http({
         method: "GET",
         cache: true,
-        url: this.getBase() + "%s/schema.json".replace(/%s/ig, name)
+        url: this.resolveUrl("/%s/schema.json".replace(/%s/ig, name))
     }).then(function (response) {
         callback(null, response.data);
     }, function (err) {
-        console.log(err);
-        callback(new Error('Internal Server Error'))
+        callback(err)
     });
-    return deferred.promise;
 };
 
 
@@ -299,9 +296,9 @@ ClientDataService.prototype.items = function(options, callback) {
     var $http = this.$http,
         $q = this.$q,
         deferred = $q.defer(),
-        url = UrlPropertyDescriptor(options).get() || this.getBase() +  "%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
-    //delete privates_ if any
-    delete options.privates_;
+        url = UrlPropertyDescriptor(options).get() || "/%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
+    //delete $url if any
+    delete options.$url;
     callback = callback || function() {};
     $http({
         method: "GET",
@@ -318,9 +315,9 @@ ClientDataService.prototype.items = function(options, callback) {
 
 ClientDataService.prototype.get = function(options) {
     var $http = this.$http,
-        url = UrlPropertyDescriptor(options).get() || this.getBase() + "%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
-    //delete privates_ if any
-    delete options.privates_;
+        url = UrlPropertyDescriptor(options).get() || "/%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
+    //delete $url if any
+    delete options.$url;
     return $http({
         method: "GET",
         url: this.resolveUrl(url),
@@ -333,10 +330,16 @@ ClientDataService.prototype.get = function(options) {
     });
 };
 
-ClientDataService.prototype.save = function(item, options, callback) {
+/**
+ *
+ * @param {*} obj
+ * @param {*} options
+ * @param {Function} callback
+ */
+ClientDataService.prototype.save = function(obj, options, callback) {
     var $http = this.$http;
-    var url = UrlPropertyDescriptor(options).get() || this.getBase() + "%s/edit.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
-    $http.put(url, item).success(function (data) {
+    var url = UrlPropertyDescriptor(options).get() || "/%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
+    $http.put(this.resolveUrl(url), obj).success(function (data) {
         callback(null, data);
     }).error(function (err, status, headers) {
         var er;
@@ -349,33 +352,48 @@ ClientDataService.prototype.save = function(item, options, callback) {
     });
 };
 
-ClientDataService.prototype.new = function(item, options, callback) {
-    var $http = this.$http,
-        url = UrlPropertyDescriptor(options).get() || this.getBase() + "%s/new.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
-    //get data
-    var data = angular.toParam(item, 'data');
-    if (typeof options["_CSRFToken"] === "string")
-        data = data + '&_CSRFToken=' + options["_CSRFToken"];
-    $http({
-        method: options.method || 'POST',
-        url: this.resolveUrl(url),
-        data: data,  // pass in data as strings
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }  // set the headers so angular passing info as form data (not request payload)
-    }).success(function (data) {
-        callback(null, data);
-    }).error(function (err, status, headers) {
-        if (headers("X-Status-Description"))
-            callback(new Error(headers("X-Status-Description")));
-        else
-            callback(new Error(err));
+/**
+ *
+ * @param {*} obj
+ * @param {*} options
+ * @param {Function=} callback
+ */
+ClientDataService.prototype.new = function(obj, options, callback) {
+    if (angular.isArray(obj)) {
+        //set internal state
+        obj.forEach(function(x) {
+            if (angular.isObject(x))
+                x.$state = 1;
+        });
+    }
+    else if (angular.isObject(obj)) {
+        //set internal state
+        obj.$state = 1;
+    }
+    return this.save(obj, options, function(err, result) {
+        if (err) {
+            return callback(err);
+        }
+        if (angular.isArray(obj)) {
+            //set internal state
+            obj.forEach(function(x) {
+                if (angular.isObject(x))
+                    delete x.$state;
+            });
+        }
+        else if (angular.isObject(obj)) {
+            //set internal state
+            delete obj.$state;
+        }
+        return callback(null, result);
     });
 };
 
 ClientDataService.prototype.remove = function(item, options, callback) {
     var $http = this.$http,
-        url = UrlPropertyDescriptor(options).get() || this.getBase() +  "%s/remove.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
+        url = UrlPropertyDescriptor(options).get() || "/%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     $http({
-        method:'POST',
+        method:'DELETE',
         url: this.resolveUrl(url),
         data: angular.toParam(item, 'data'),  // pass in data as strings
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
@@ -389,6 +407,168 @@ ClientDataService.prototype.remove = function(item, options, callback) {
     });
 };
 
+/**
+ * @param {string} name
+ * @param {ClientDataService|*} service
+ * @constructor
+ */
+function ClientDataModel(name, service) {
+    /**
+     * Gets a string which represents the name of this model
+     * @returns {string}
+     */
+    this.getName = function() {
+        return name;
+    };
+    /**
+     * Gets an instance of ClientDataService which represents the current data service
+     * @returns {ClientDataService|*}
+     */
+    this.getService = function() {
+        return service;
+    };
+
+    //set default url
+    var url_ = angular.format("/%s/index.json", this.getName());
+    /**
+     * Gets a string which represents the URL of the current model context.
+     * @returns {string}
+     */
+    this.getUrl = function() {
+        return url_;
+    };
+    /**
+     * Sets a string which represents the URL of the current model context.
+     * @param value
+     * @returns {ClientDataModel}
+     */
+    this.setUrl = function(value) {
+        if (/^\//.test(value)) {
+            url_ = value;
+        }
+        else {
+            url_ = "/" + this.getName() + "/" + value;
+        }
+        return this;
+    };
+}
+/**
+ * Sets a string which represents the URL of the current model context.
+ * @param {string} value
+ * @returns {ClientDataModel}
+ */
+ClientDataModel.prototype.url = function(value) {
+    return this.setUrl(value);
+};
+
+/**
+ * Gets a JSON schema associated with the current model
+ * @returns {Promise|*}
+ */
+ClientDataModel.prototype.schema = function() {
+    var self = this,
+        $injector = angular.element(document.body).injector(),
+        $q = $injector.get("$q"),
+        deferred = $q.defer();
+    setTimeout(function() {
+        self.getService().schema(this.getName(), function(err, result) {
+            if (err) { return deferred.reject(err); }
+            return deferred.resolve(result);
+        });
+    }, 0);
+    return deferred.promise;
+};
+
+/**
+ * Gets an instance of ClientDataQueryable based on the current model
+ * @returns {ClientDataQueryable|*}
+ */
+ClientDataModel.prototype.asQueryable = function() {
+    return new ClientDataQueryable(this.getName(), this.getService());
+};
+
+/**
+ * Inserts or updates the given object or array of objects
+ * @param {*} obj
+ * @returns {Promise|*}
+ */
+ClientDataModel.prototype.save = function(obj) {
+
+    var self = this,
+        $injector = angular.element(document.body).injector(),
+        $q = $injector.get("$q"),
+        deferred = $q.defer();
+    setTimeout(function() {
+        self.getService().save(obj, { url: self.getUrl() }, function(err, result) {
+            if (err) { return deferred.reject(err); }
+            return deferred.resolve(result);
+        });
+    }, 0);
+    return deferred.promise;
+};
+
+/**
+ * Deletes the given object or array of objects
+ * @param {*} obj
+ * @returns {Promise|*}
+ */
+ClientDataModel.prototype.remove = function(obj) {
+    var self = this,
+        $injector = angular.element(document.body).injector(),
+        $q = $injector.get("$q"),
+        deferred = $q.defer();
+    setTimeout(function() {
+        self.getService().remove(obj, { url:self.getUrl() }, function(err, result) {
+            if (err) { return deferred.reject(err); }
+            return deferred.resolve(result);
+        });
+    }, 0);
+    return deferred.promise;
+};
+
+/**
+ * @param {string} attr
+ * @returns {ClientDataQueryable}
+ */
+ClientDataModel.prototype.where = function(attr) {
+    return this.asQueryable().where(attr);
+};
+
+/**
+ * @param {...string} attr
+ * @returns {ClientDataQueryable}
+ */
+ClientDataModel.prototype.select = function(attr) {
+    return ClientDataQueryable.prototype.select.apply(this.asQueryable(),arguments);
+};
+
+/**
+ * @params {number|*} val
+ * @returns {ClientDataQueryable|*}
+ */
+ClientDataModel.prototype.skip = function(val) {
+    return this.asQueryable().skip(val);
+};
+
+/**
+ * @params {number|*} val
+ * @returns {ClientDataQueryable}
+ */
+ClientDataModel.prototype.take = function(val) {
+    return this.asQueryable().take(val);
+};
+
+/**
+ * JSON DATE PARSER
+ */
+
+var REG_DATETIME_ISO = /^(\d{4})(?:-?W(\d+)(?:-?(\d+)D?)?|(?:-(\d+))?-(\d+))(?:[T ](\d+):(\d+)(?::(\d+)(?:\.(\d+))?)?)?(?:Z(-?\d*))?([+-](\d+):(\d+))?$/;
+function dateParser(key, value) {
+    if ((typeof value === 'string') && REG_DATETIME_ISO.test(value)) {
+        return new Date(value);
+    }
+    return value;
+}
 
 /**
  * @class ClientDataContext
@@ -401,10 +581,10 @@ function ClientDataContext(service) {
      * Gets an instance of DataQueryable class associated with the model provided
      * @param {string} name
      * @methodOf $context
-     * @return {ClientDataQueryable}
+     * @return {ClientDataModel}
      */
     this.model = function(name) {
-        return new ClientDataQueryable(name, service);
+        return new ClientDataModel(name, service);
     }
 }
 
@@ -929,7 +1109,7 @@ function ClientDataQueryable(model, service) {
             if (typeof __items === 'undefined') {
                 var deferred = self.service.$q.defer();
                 __items =  deferred.promise;
-                var copy = self.copy();
+                var copy = self.getParams();
                 delete copy.privates_;
                 self.service.items(copy, function(err, result) {
                     if (err) {
@@ -955,7 +1135,7 @@ function ClientDataQueryable(model, service) {
             if (typeof __item === 'undefined') {
                 var deferred = self.service.$q.defer();
                 __item =  deferred.promise;
-                var copy = self.first().copy();
+                var copy = self.first().getParams();
                 delete copy.privates_;
                 self.service.items(copy, function(err, result) {
                     if (err) {
@@ -990,6 +1170,30 @@ function ClientDataQueryable(model, service) {
         set: function(value) { self.privates_.schema = value; }
     });
 
+    //set default url
+    self.$url = angular.format("/%s/index.json", self.$model);
+    /**
+     * Gets a string which represents the URL of the current model context.
+     * @returns {string}
+     */
+    this.getUrl = function() {
+        return self.$url;
+    };
+    /**
+     * Sets a string which represents the URL of the current model context.
+     * @param value
+     * @returns {ClientDataQueryable}
+     */
+    this.setUrl = function(value) {
+        if (/^\//.test(value)) {
+            self.$url = value;
+        }
+        else {
+            self.$url = "/" + self.$model + "/" + value;
+        }
+        return this;
+    };
+
 }
 
 /**
@@ -1008,7 +1212,7 @@ ClientDataQueryable.prototype.url = function(s) {
 
 ClientDataQueryable.prototype.data = function() {
     var self = this;
-    var deferred = self.service.$q.defer(), options = self.copy();
+    var deferred = self.service.$q.defer(), options = self.getParams();
     delete options.privates_;
     self.service.items(options, function(err, result) {
         if (err) {
@@ -1027,6 +1231,10 @@ ClientDataQueryable.prototype.reset = function() {
     return this;
 };
 
+/**
+ * @deprecated use ClientDataQueryable.getParams() instead to get a native object based on the specified query parameters
+ * @returns {ClientDataQueryable}
+ */
 ClientDataQueryable.prototype.copy = function() {
     var self = this, result = new ClientDataQueryable();
     var keys = Object.keys(this);
@@ -1043,6 +1251,29 @@ ClientDataQueryable.prototype.copy = function() {
     }
     return result;
 };
+/**
+ * Returns a native object which represents the specified query parameters
+ * @returns {*}
+ */
+ClientDataQueryable.prototype.getParams = function() {
+    var self = this, result = { };
+    var keys = Object.keys(this);
+    keys.forEach(function(key) {
+        if (key.indexOf('$')==0) {
+            if ((typeof self[key] !== 'undefined') && (self[key] != null))
+                result[key] = self[key];
+        }
+    });
+    if (result.$prepared) {
+        if (result.$filter)
+            result.$filter = angular.format('(%s) and (%s)', result.$prepared, result.$filter);
+        else
+            result.$filter = result.$prepared;
+        delete result.$prepared;
+    }
+    return result;
+};
+
 
 ClientDataQueryable.escape = function(val)
 {
