@@ -283,7 +283,7 @@ ClientDataService.prototype.schema = function(name, callback) {
     $http({
         method: "GET",
         cache: true,
-        url: this.resolveUrl("/%s/schema.json".replace(/%s/ig, name))
+        url: this.resolveUrl(angular.format("/%s/schema.json",name))
     }).then(function (response) {
         callback(null, response.data);
     }, function (err) {
@@ -454,6 +454,7 @@ function ClientDataModel(name, service) {
 }
 /**
  * Sets a string which represents the URL of the current model context.
+ * @deprecated This method is deprecated and will be removed. Use ClientDataModel.setUrl(string) instead.
  * @param {string} value
  * @returns {ClientDataModel}
  */
@@ -1197,6 +1198,7 @@ function ClientDataQueryable(model, service) {
 }
 
 /**
+ * @deprecated - This method is deprecated and will be removed. User ClientDataQueryable.setUrl(string) instead.
  * @param {string} s
  * @returns {ClientDataQueryable|string}
  */
@@ -1232,7 +1234,7 @@ ClientDataQueryable.prototype.reset = function() {
 };
 
 /**
- * @deprecated use ClientDataQueryable.getParams() instead to get a native object based on the specified query parameters
+ * @deprecated This method is deprecated and will be removed. Use use ClientDataQueryable.getParams()  instead.
  * @returns {ClientDataQueryable}
  */
 ClientDataQueryable.prototype.copy = function() {
@@ -1491,14 +1493,14 @@ ClientDataQueryable.prototype.groupBy = function(attr) {
 /**
  * @param {string|FieldSelector...} attr
  * @returns ClientDataQueryable
- * @deprecated This function is deprecated. Use ClientDataQueryable.groupBy() instead.
+ * @deprecated This method is deprecated and will be removed. Use ClientDataQueryable.groupBy() instead.
  */
 ClientDataQueryable.prototype.group = function(attr) {
     return this.groupBy.apply(this, arguments);
 };
 
 /**
- * @param {string...} attr
+ * @param {...string} attr
  * @returns ClientDataQueryable
  */
 ClientDataQueryable.prototype.expand = function(attr) {
