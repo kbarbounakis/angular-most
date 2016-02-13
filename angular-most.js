@@ -295,7 +295,6 @@ ClientDataService.prototype.schema = function(name, callback) {
 ClientDataService.prototype.items = function(options, callback) {
     var $http = this.$http,
         $q = this.$q,
-        deferred = $q.defer(),
         url = UrlPropertyDescriptor(options).get() || "/%s/index.json".replace(/%s/ig, ModelPropertyDescriptor(options).get());
     //delete $url if any
     delete options.$url;
@@ -310,7 +309,6 @@ ClientDataService.prototype.items = function(options, callback) {
         console.log(err);
         callback(new Error('Internal Server Error'));
     });
-    return deferred.promise;
 };
 
 ClientDataService.prototype.get = function(options) {
