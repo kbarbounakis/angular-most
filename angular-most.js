@@ -28,6 +28,208 @@
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+
+// Create Base64 Object
+var Base64={_keyStr:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",encode:function(e){var t="";var n,r,i,s,o,u,a;var f=0;e=Base64._utf8_encode(e);while(f<e.length){n=e.charCodeAt(f++);r=e.charCodeAt(f++);i=e.charCodeAt(f++);s=n>>2;o=(n&3)<<4|r>>4;u=(r&15)<<2|i>>6;a=i&63;if(isNaN(r)){u=a=64}else if(isNaN(i)){a=64}t=t+this._keyStr.charAt(s)+this._keyStr.charAt(o)+this._keyStr.charAt(u)+this._keyStr.charAt(a)}return t},decode:function(e){var t="";var n,r,i;var s,o,u,a;var f=0;e=e.replace(/[^A-Za-z0-9\+\/\=]/g,"");while(f<e.length){s=this._keyStr.indexOf(e.charAt(f++));o=this._keyStr.indexOf(e.charAt(f++));u=this._keyStr.indexOf(e.charAt(f++));a=this._keyStr.indexOf(e.charAt(f++));n=s<<2|o>>4;r=(o&15)<<4|u>>2;i=(u&3)<<6|a;t=t+String.fromCharCode(n);if(u!=64){t=t+String.fromCharCode(r)}if(a!=64){t=t+String.fromCharCode(i)}}t=Base64._utf8_decode(t);return t},_utf8_encode:function(e){e=e.replace(/\r\n/g,"\n");var t="";for(var n=0;n<e.length;n++){var r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r)}else if(r>127&&r<2048){t+=String.fromCharCode(r>>6|192);t+=String.fromCharCode(r&63|128)}else{t+=String.fromCharCode(r>>12|224);t+=String.fromCharCode(r>>6&63|128);t+=String.fromCharCode(r&63|128)}}return t},_utf8_decode:function(e){var t="";var n=0;var r=c1=c2=0;while(n<e.length){r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r);n++}else if(r>191&&r<224){c2=e.charCodeAt(n+1);t+=String.fromCharCode((r&31)<<6|c2&63);n+=2}else{c2=e.charCodeAt(n+1);c3=e.charCodeAt(n+2);t+=String.fromCharCode((r&15)<<12|(c2&63)<<6|c3&63);n+=3}}return t}};
+
+// check for nodeJS
+var hasModule = (typeof module !== 'undefined' && module && module.exports);
+
+/**
+ *
+ * @constructor
+ */
+function TextUtils() {
+
+}
+
+/**
+ * @param {string} s
+ * @returns {*}
+ */
+TextUtils.toBase64 = function(s) {
+    if (typeof s !== 'string') {
+        return;
+    }
+    return Base64.encode(s);
+};
+
+/**
+ *
+ * @param {string} s
+ * @returns {*}
+ */
+TextUtils.fromBase64 = function(s) {
+    if (typeof s !== 'string') {
+        return;
+    }
+    return Base64.decode(s);
+};
+
+TextUtils.isNotEmptyString = function(s) {
+    if (typeof s === 'string') {
+        return (s.length>0);
+    }
+    return false;
+};
+
+/**
+ * @param {...*} f
+ * @returns {string}
+ */
+TextUtils.format = function(f) {
+    var i;
+    if (typeof f !== 'string') {
+        var objects = [];
+        for (i  = 0; i < arguments.length; i++) {
+            objects.push(arguments[i]);
+        }
+        return objects.join(' ');
+    }
+    i = 1;
+    var args = arguments;
+    var len = args.length;
+    var str = String(f).replace(/%[sdj%]/g, function (x) {
+        if (x === '%%') return '%';
+        if (i >= len) return x;
+        switch (x) {
+            case '%s':
+                return String(args[i++]);
+            case '%d':
+                return Number(args[i++]);
+            case '%j':
+                return JSON.stringify(args[i++]);
+            default:
+                return x;
+        }
+    });
+    for (var x = args[i]; i < len; x = args[++i]) {
+        if (x === null || typeof x !== 'object') {
+            str += ' ' + x;
+        } else {
+            str += ' ' + x.toString();
+        }
+    }
+    return str;
+};
+
+function Args() {
+    //
+}
+
+var jQuery = this.jQuery, angular = this.angular;
+/**
+ * Checks the expression and throws an exception if the condition is not met.
+ * @param {*} expr
+ * @param {string} message
+ */
+Args.check = function(expr, message) {
+    Args.notNull(expr,"Expression");
+    if (typeof expr === 'function') {
+        expr.call()
+    }
+    var res;
+    if (typeof expr === 'function') {
+        res = !(expr.call());
+    }
+    else {
+        res = (!expr);
+    }
+    if (res) {
+        var err = new Error(message);
+        err.code = "ECHECK";
+        throw err;
+    }
+};
+/**
+ *
+ * @param {*} arg
+ * @param {string} name
+ */
+Args.notNull = function(arg,name) {
+    if (typeof arg === 'undefined' || arg == null) {
+        var err = new Error(name + " may not be null or undefined");
+        err.code = "ENULL";
+        throw err;
+    }
+};
+
+/**
+ * @param {*} arg
+ * @param {string} name
+ */
+Args.notString = function(arg, name) {
+    if (typeof arg !== 'string') {
+        var err = new Error(name + " must be a string");
+        err.code = "EARG";
+        throw err;
+    }
+};
+
+/**
+ * @param {*} arg
+ * @param {string} name
+ */
+Args.notFunction = function(arg, name) {
+    if (typeof arg !== 'function') {
+        var err = new Error(name + " must be a function");
+        err.code = "EARG";
+        throw err;
+    }
+};
+
+/**
+ * @param {*} arg
+ * @param {string} name
+ */
+Args.notNumber = function(arg, name) {
+    if (typeof arg !== 'string') {
+        var err = new Error(name + " must be number");
+        err.code = "EARG";
+        throw err;
+    }
+};
+/**
+ * @param {string|*} arg
+ * @param {string} name
+ */
+Args.notEmpty = function(arg,name) {
+    Args.notNull(arg,name);
+    Args.notString(arg,name);
+    if (arg.length == 0) {
+        var err = new Error(name + " may not be empty");
+        err.code = "EEMPTY";
+        return err;
+    }
+};
+
+/**
+ * @param {number|*} arg
+ * @param {string} name
+ */
+Args.notNegative = function(arg,name) {
+    Args.notNumber(arg,name);
+    if (arg<0) {
+        var err = new Error(name + " may not be negative");
+        err.code = "ENEG";
+        return err;
+    }
+};
+
+/**
+ * @param {number|*} arg
+ * @param {string} name
+ */
+Args.positive = function(arg,name) {
+    Args.notNumber(arg,name);
+    if (arg<=0) {
+        var err = new Error(name + " may not be negative or zero");
+        err.code = "EPOS";
+        return err;
+    }
+};
+
 angular.extend(angular, {
     /**
      * Inherit the prototype methods from one constructor into another.
@@ -241,6 +443,18 @@ function ModelPropertyDescriptor(obj) {
         }
     }
 }
+
+/**
+ * JSON DATE PARSER
+ */
+var REG_DATETIME_ISO = /^(\d{4})(?:-?W(\d+)(?:-?(\d+)D?)?|(?:-(\d+))?-(\d+))(?:[T ](\d+):(\d+)(?::(\d+)(?:\.(\d+))?)?)?(?:Z(-?\d*))?([+-](\d+):(\d+))?$/;
+function dateParser(key, value) {
+    if ((typeof value === 'string') && REG_DATETIME_ISO.test(value)) {
+        return new Date(value);
+    }
+    return value;
+}
+
 /**
  * @param $http
  * @param $q
@@ -276,6 +490,67 @@ function ClientDataService($http, $q) {
         throw  new Error("Invalid argument. Expected not empty string.");
     };
 }
+
+/**
+ * @param {{method:string,url:string,data:*,headers:*}|*} options
+ * @returns {Promise|*}
+ */
+ClientDataService.prototype.execute = function(options) {
+
+    var self = this,
+        $injector = angular.element(document.body).injector(),
+        $http = $injector.get("$http"),
+        $q = $injector.get("$q"),
+        deferred = $q.defer();
+    setTimeout(function() {
+        try {
+            //options defaults
+            options.method = options.method || "GET";
+            options.headers = options.headers || { };
+            //set content type
+            options.headers["Content-Type"] = "application/json";
+            //validate options URL
+            Args.notNull(options.url,"Request URL");
+            //validate URL format
+            Args.check(!/^https?:\/\//i.test(options.url),"Request URL may not be an absolute URI");
+            //validate request method
+            Args.check(/^GET|POST|PUT|DELETE$/i.test(options.method),"Invalid request method. Expected GET, POST, PUT or DELETE.");
+            var url_ = self.resolveUrl(options.url);
+            var o = {
+                method: options.method,
+                url: url_,
+                headers:options.headers,
+                transformResponse:function(data, headers, status) {
+                    if (typeof data === 'undefined' || data == null) {
+                        return;
+                    }
+                    if (/^application\/json/.test(headers("Content-Type"))) {
+                        if (data.length == 0) {
+                            return;
+                        }
+                        return JSON.parse(data, dateParser);
+                    }
+                    return data;
+                }
+            };
+            if (/^GET$/i.test(o.method)) {
+                o.params = options.data;
+            }
+            else {
+                o.data = options.data;
+            }
+            $http(o).then(function (response) {
+                deferred.resolve(response.data);
+            }, function (err) {
+                deferred.reject(err);
+            });
+        }
+        catch(e) {
+            deferred.reject(e);
+        }
+    }, 0);
+    return deferred.promise;
+};
 
 ClientDataService.prototype.schema = function(name, callback) {
     var $http = this.$http, $q = this.$q;
@@ -558,6 +833,22 @@ ClientDataModel.prototype.take = function(val) {
 };
 
 /**
+ * @param {string} attr
+ * @returns {ClientDataQueryable}
+ */
+ClientDataModel.prototype.orderBy = function(attr) {
+    return ClientDataQueryable.prototype.orderBy.call(this.asQueryable(),attr);
+};
+
+/**
+ * @param {string} attr
+ * @returns {ClientDataQueryable}
+ */
+ClientDataModel.prototype.orderByDescending = function(attr) {
+    return ClientDataQueryable.prototype.orderByDescending.call(this.asQueryable(),attr);
+};
+
+/**
  * JSON DATE PARSER
  */
 
@@ -585,7 +876,38 @@ function ClientDataContext(service) {
     this.model = function(name) {
         return new ClientDataModel(name, service);
     }
+    /**
+     * @returns {ClientDataService}
+     */
+    this.getService = function() {
+        return service;
+    };
+    /**
+     * @param {ClientDataService|*} value
+     */
+    this.setService = function(value) {
+        service = value;
+    };
+
 }
+
+/**
+ * @param {string} username
+ * @param {string} password
+ * @returns {Promise|*}
+ */
+ClientDataContext.prototype.authenticate = function(username,password) {
+    return this.getService().execute({
+        method:"GET",
+        url:"/User/index.json",
+        data: {
+            $filter:"id eq me()"
+        },
+        headers: {
+            Authorization:"Basic " + TextUtils.toBase64(username + ":" + password)
+        }
+    });
+};
 
 
 
@@ -1065,17 +1387,6 @@ FieldExpression.create = function(expr) {
  * @param {string} model - The target model
  * @param {*=} service - The underlying data service
  * @property {string} url - Gets or sets a string that represents the base service url
- * @property {string} $filter - Gets or sets a string that represents a query expression e.g. name eq 'John'
- * @property {string} $select - Gets or sets a comma delimited string that represents the fields to be returned e.g. id,name,description
- * @property {string} $groupby - Gets or sets a comma delimited string that represents the fields to be used in group expression e.g. id,name
- * @property {string} $orderby - Gets or sets a comma delimited string that represents the fields to be used in order expression e.g. name desc,type asc
- * @property {string} $prepared - Gets or sets a string that represents a prepared query expression
- * @property {string} $expand - Gets or sets a comma delimited string that represents an array of fields to be expanded e.g. type,members
- * @property {string} $model - Gets or sets a string that represents the current model name
- * @property {number} $top - Gets or sets an integer that represents the number of records to be retrieved
- * @property {number} $skip - Gets or sets an integer that represents the number of records to be skipped
- * @property {boolean} $array - Gets or sets a boolean that indicates whether the result will be treated as array
- * @property {boolean} $inlinecount - Gets or sets a boolean that indicates whether paging parameters will be included in the result.
  * @property {Array} items -A collection of object that represents the current dynamic items
  * @property {Array} item - An object that represents the current dynamic item
  * @property {ClientDataService} service - An object that represents the current client data service
@@ -1085,6 +1396,7 @@ FieldExpression.create = function(expr) {
 function ClientDataQueryable(model, service) {
     /**
      * Gets or sets a string that represents the target model
+     * @private
      * @type {String}
      */
     this.$model = model;
@@ -1169,7 +1481,10 @@ function ClientDataQueryable(model, service) {
         set: function(value) { self.privates_.schema = value; }
     });
 
-    //set default url
+    /**
+     * @private
+     * @type {string}
+     */
     self.$url = angular.format("/%s/index.json", self.$model);
     /**
      * Gets a string which represents the URL of the current model context.
@@ -1209,7 +1524,11 @@ ClientDataQueryable.prototype.url = function(s) {
     delete this.$model;
     return this;
 };
-
+/**
+ * @deprecated This method is deprecated and will be removed in next major release.
+ * Use ClientDataQueryable.getItems() or ClientDataQueryable.getItem() instead
+ * @returns {*}
+ */
 ClientDataQueryable.prototype.data = function() {
     var self = this;
     var deferred = self.service.$q.defer(), options = self.getParams();
@@ -1223,6 +1542,48 @@ ClientDataQueryable.prototype.data = function() {
             deferred.resolve(result);
         }
     });
+    return deferred.promise;
+};
+/**
+ * @returns {Promise|*}
+ */
+ClientDataQueryable.prototype.getItems = function() {
+    var self = this,
+        deferred = self.service.$q.defer();
+    setTimeout(function() {
+        var copy = self.getParams();
+        self.service.execute({
+            method: "GET",
+            url: self.getUrl(),
+            data: copy
+        }).then(function(result) {
+            deferred.resolve(result);
+        }).catch(function(err) {
+            console.log(err);
+            deferred.reject(err);
+        });
+    }, 0);
+    return deferred.promise;
+};
+/**
+ * @returns {Promise|*}
+ */
+ClientDataQueryable.prototype.getItem = function() {
+    var self = this,
+        deferred = self.service.$q.defer();
+    setTimeout(function() {
+        var copy = self.first().getParams();
+        self.service.execute({
+            method: "GET",
+            url: self.getUrl(),
+            data: copy
+        }).then(function(result) {
+            deferred.resolve(result[0]);
+        }).catch(function(err) {
+            console.log(err);
+            deferred.reject(err);
+        });
+    }, 0);
     return deferred.promise;
 };
 
@@ -1244,6 +1605,10 @@ ClientDataQueryable.prototype.copy = function() {
     });
     if (result.$prepared) {
         if (result.$filter)
+            /**
+             * @private
+             * @type {string}
+             */
             result.$filter = angular.format('(%s) and (%s)', result.$prepared, result.$filter);
         else
             result.$filter = result.$prepared;
@@ -1414,6 +1779,10 @@ ClientDataQueryable.prototype.model = function(name) {
  */
 ClientDataQueryable.prototype.inlineCount = function(value) {
     if (typeof value === 'undefined')
+        /**
+         * @private
+         * @type {boolean}
+         */
         this.$inlinecount = true;
     else
         this.$inlinecount = value;
@@ -1434,6 +1803,10 @@ ClientDataQueryable.prototype.paged = function(value) {
  * @returns {ClientDataQueryable}
  */
 ClientDataQueryable.prototype.asArray = function(value) {
+    /**
+     * @private
+     * @type {Boolean}
+     */
     this.$array = value;
     return this;
 };
@@ -1459,7 +1832,13 @@ ClientDataQueryable.prototype.select = function(attr) {
         else
             throw new Error("Invalid argument. Expected string.");
     }
-    if (arr.length >0) { this.$select = arr.join(",") }
+    if (arr.length >0) {
+        /**
+         * @private
+         * @type {string}
+         */
+        this.$select = arr.join(",");
+    }
     return this;
 };
 
@@ -1484,7 +1863,13 @@ ClientDataQueryable.prototype.groupBy = function(attr) {
         else
             throw new Error("Invalid argument. Expected string.");
     }
-    if (arr.length >0) { this.$groupby = arr.join(",") }
+    if (arr.length >0) {
+        /**
+         * @private
+         * @type {string}
+         */
+        this.$groupby = arr.join(",");
+    }
     return this;
 };
 
@@ -1516,7 +1901,13 @@ ClientDataQueryable.prototype.expand = function(attr) {
         else
             throw new Error("Invalid argument. Expected string.");
     }
-    if (arr.length >0) { this.$expand = arr.join(",") }
+    if (arr.length >0) {
+        /**
+         * @private
+         * @type {string}
+         */
+        this.$expand = arr.join(",")
+    }
     return this;
 };
 
@@ -1542,6 +1933,10 @@ ClientDataQueryable.prototype.filter = function(s) {
 ClientDataQueryable.prototype.prepare = function() {
     if (this.$filter) {
         if (typeof this.$prepared === 'undefined' || this.$prepared === null) {
+            /**
+             * @private
+             * @type {string}
+             */
             this.$prepared = this.$filter;
         }
         else {
@@ -1615,6 +2010,10 @@ ClientDataQueryable.prototype.orElse = function(s) {
  * @returns ClientDataQueryable
  */
 ClientDataQueryable.prototype.take = function(val) {
+    /**
+     * @private
+     * @type {number}
+     */
     this.$top = val;
     return this;
 };
@@ -1629,7 +2028,15 @@ ClientDataQueryable.prototype.all = function() {
  * @returns ClientDataQueryable
  */
 ClientDataQueryable.prototype.first = function() {
+    /**
+     * @private
+     * @type {number}
+     */
     this.$top = 1;
+    /**
+     * @private
+     * @type {number}
+     */
     this.$skip = 0;
     return this;
 };
@@ -1647,6 +2054,10 @@ ClientDataQueryable.prototype.list = function() {
  * @returns ClientDataQueryable
  */
 ClientDataQueryable.prototype.skip = function(val) {
+    /**
+     * @private
+     * @type {number}
+     */
     this.$skip = val;
     return this;
 };
@@ -1657,6 +2068,10 @@ ClientDataQueryable.prototype.skip = function(val) {
  */
 ClientDataQueryable.prototype.orderBy = function(name) {
     if (typeof name !=='undefined' || name!=null)
+        /**
+         * @private
+         * @type {string}
+         */
         this.$orderby = name.toString();
     return this;
 };
@@ -3166,7 +3581,7 @@ most.provider('$svc', function ClientDataServiceProvider() {
     this.$get = function ($http, $q) {
         var res = new ClientDataService($http, $q);
         res.base = this.defaults.base || "/";
-        return new ClientDataService($http, $q);
+        return res;
     };
 });
 
