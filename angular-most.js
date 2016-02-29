@@ -809,6 +809,20 @@ ClientDataModel.prototype.where = function(attr) {
 };
 
 /**
+ * @returns {Promise|*}
+ */
+ClientDataModel.prototype.getItems = function() {
+    return this.asQueryable().getItems();
+};
+
+/**
+ * @returns {Promise|*}
+ */
+ClientDataModel.prototype.getItem = function() {
+    return this.asQueryable().getItem();
+};
+
+/**
  * @param {...string} attr
  * @returns {ClientDataQueryable}
  */
@@ -847,18 +861,6 @@ ClientDataModel.prototype.orderBy = function(attr) {
 ClientDataModel.prototype.orderByDescending = function(attr) {
     return ClientDataQueryable.prototype.orderByDescending.call(this.asQueryable(),attr);
 };
-
-/**
- * JSON DATE PARSER
- */
-
-var REG_DATETIME_ISO = /^(\d{4})(?:-?W(\d+)(?:-?(\d+)D?)?|(?:-(\d+))?-(\d+))(?:[T ](\d+):(\d+)(?::(\d+)(?:\.(\d+))?)?)?(?:Z(-?\d*))?([+-](\d+):(\d+))?$/;
-function dateParser(key, value) {
-    if ((typeof value === 'string') && REG_DATETIME_ISO.test(value)) {
-        return new Date(value);
-    }
-    return value;
-}
 
 /**
  * @class ClientDataContext
@@ -912,7 +914,8 @@ ClientDataContext.prototype.authenticate = function(username,password) {
 
 
 /**
- * @class {MostDataField}
+ * @class
+ * @deprecated MostDataField class is deprecated and it will be removed at the next major update
  * @param name
  * @constructor
  */
@@ -1137,6 +1140,7 @@ MostDataField.prototype.startsWith = function(s) {
 if (typeof String.prototype.fieldOf === 'undefined')
 {
     /**
+     * @deprecated This method is deprecated and it will be removed at the next major update
      * @returns {MostDataField}
      */
     var fieldOf = function() {
@@ -1192,7 +1196,8 @@ if (typeof String.prototype.format === 'undefined')
 }
 
 /**
- * @class FieldSelector
+ * @deprecated FieldSelector class is deprecated and it will be removed at the next major update
+ * @class
  * @param {string} name
  * @constructor
  */
@@ -1364,6 +1369,7 @@ FieldSelector.prototype.toString = function() {
 };
 
 /**
+ * @deprecated FieldExpression class is deprecated and it will be removed at the next major update
  * @param {string} expr
  * @constructor
  */
@@ -1377,7 +1383,7 @@ FieldExpression.prototype.toString = function() {
 
 /**
  * @param {string} expr
- * @returns {QueryExpression}
+ * @returns {FieldExpression}
  */
 FieldExpression.create = function(expr) {
     return new FieldExpression(expr);
@@ -1741,7 +1747,7 @@ ClientDataQueryable.prototype.append = function() {
         else
             expr = self.privates_.left + ' ' + self.privates_.op + ' ' + ClientDataQueryable.escape(self.privates_.right);
         if (expr) {
-            if (typeof self.$filter === 'undefined' || self.$filter === null)
+            if (typeof self.$filter === 'undefined' || self.$filter == null)
                 self.$filter = expr;
             else {
                 self.privates_.lop = self.privates_.lop || 'and';
@@ -1964,44 +1970,33 @@ ClientDataQueryable.prototype.toFilter = function() {
 
 /**
  *
- * @param s
+ * @param {string} attr
  * @returns {ClientDataQueryable}
  */
-ClientDataQueryable.prototype.andAlso = function(s) {
+ClientDataQueryable.prototype.andAlso = function(attr) {
     var self = this;
-    if (typeof s !== 'string')
-        return self;
-    if (s.length==0)
-        return self;
-    //clear in-process expression privates_
+    Args.notEmpty(name,"The left operand of a logical expression");
     if (self.$filter) {
-        self.$filter = '(' + self.$filter + ') and (' + s + ')';
+        self.$filter = "(" + self.$filter + ")";
     }
-    var p = self.privates_;
-    p._lop = 'and';
-    delete p.left; delete p.right; delete p.op;
+    self.privates_.left = attr;
+    self.privates_.lop = 'and';
     return self;
 };
 
 /**
  *
- * @param s
+ * @param {string} attr
  * @returns {ClientDataQueryable}
  */
-ClientDataQueryable.prototype.orElse = function(s) {
+ClientDataQueryable.prototype.orElse = function(attr) {
     var self = this;
-    if (typeof s !== 'string')
-        return self;
-    if (s.length==0)
-        return self;
-    //clear in-process expression privates_
-    if (self.$filter)
-        self.$filter = '(' + self.$filter + ') or (' + s + ')';
-    else
-        self.$filter = S;
-    var p = self.privates_;
-    p._lop = 'or';
-    delete p.left; delete p.right; delete p.op;
+    Args.notEmpty(name,"The left operand of a logical expression");
+    if (self.$filter) {
+        self.$filter = "(" + self.$filter + ")";
+    }
+    self.privates_.left = attr;
+    self.privates_.lop = 'or';
     return self;
 };
 
