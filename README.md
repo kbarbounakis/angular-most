@@ -3,11 +3,11 @@ Most Web Framework Client Module for Angular JS
 
 ## Installation
 
-    npm install most-client
+    npm install angular-most
 
 or:
 
-    bower install most-client
+    bower install angular-most
 
 ### Usage under AngularJS:
 
