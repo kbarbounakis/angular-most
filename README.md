@@ -691,7 +691,7 @@ contains the following attributes:
             .where("category").equal("Laptops")
             .skip(10)
             .take(10)
-            .list()
+            list().getItems()
             .then(function (result) {
                 //
             }).catch(function (err) {
@@ -709,7 +709,7 @@ Parameters:
                  .where("category").equal("Laptops")
                  .skip(10)
                  .take(10)
-                 .list()
+                 list().getItems()
                  .then(function (result) {
                      //
                  }).catch(function (err) {
@@ -727,7 +727,7 @@ Parameters:
                  .where("category").equal("Laptops")
                  .skip(10)
                  .take(10)
-                 .list()
+                 list().getItems()
                  .then(function (result) {
                      //
                  }).catch(function (err) {
