@@ -204,12 +204,6 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
         var deferred = $q.defer(), promise = deferred.promise;
         $scope.dtColumns = promise;
 
-        promise.then(function(value) {
-            $scope.dtColumns = value;
-        }, function(reason) {
-            console.log('An error occured while getting data table columns. ' + reason);
-        });
-
         $svc.schema(model, function(err, schema) {
             if (err) {
                 console.log(err);

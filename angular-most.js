@@ -2375,6 +2375,7 @@ function CommonController($scope, $q, $location, $window, $shared) {
     //find first element with ng-scope (root element)
     var $route,
         $routeParams,
+        $stateParams,
         $rootElement = angular.element(document.querySelector('.ng-scope')), $injector = $rootElement.injector();
     if ($injector) {
         //ensure application services
@@ -2386,6 +2387,9 @@ function CommonController($scope, $q, $location, $window, $shared) {
             $window = $window || $injector.get('$window');
         if ($injector.has('$routeParams'))
             $routeParams = $injector.get('$routeParams');
+        //ui.router params
+        if ($injector.has('$stateParams'))
+            $stateParams = $injector.get('$stateParams');
         if ($injector.has('$route'))
             $route = $injector.get('$route');
         if ($injector.has('$shared'))
@@ -2402,7 +2406,7 @@ function CommonController($scope, $q, $location, $window, $shared) {
      * Gets an object that represents the client parameters, if any.
      * @type {Object}
      */
-    $scope.client = { route : ( $routeParams || {}) };
+    $scope.client = { route : ( $routeParams || $stateParams || {}) };
     //set static current route
     $scope.client.route.current = { };
     if ($route) {
