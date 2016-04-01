@@ -45,14 +45,10 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
         });
 
         var dtOptions = DTOptionsBuilder.newOptions().withFnServerData(function(sSource, aoData, fnCallback, oSettings) {
-            var skip = aoData[3].value, top = aoData[4].value;
+            var skip = aoData[3].value, top = aoData[4].value, 
+                columns  = angular.isArray($scope.dtColumns) ? $scope.dtColumns : $scope.dtColumns.$$state.value;
             if (aoData[2].value.length==0) {
                 if (order) {
-                    var columns;
-                    if (angular.isArray($scope.dtColumns))
-                        columns = $scope.dtColumns;
-                    else
-                        columns = $scope.dtColumns.$$state.value;
                     if (angular.isArray(order)) {
                         order.forEach(function(order) {
                             if (order.name) {
@@ -92,11 +88,11 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                 });
             }
             if (searchFor) {
-                if ((searchFor.value.length > 0) && angular.isArray($scope.dtColumns)) {
+                if ((searchFor.value.length > 0) && angular.isArray(columns)) {
                     var searchfilter;
                     var filter = [];
-                    for (var i = 0; i < $scope.dtColumns.length; i++) {
-                        var col = $scope.dtColumns[i];
+                    for (var i = 0; i < columns.length; i++) {
+                        var col = columns[i];
                         if (col.bSearchable) {
                             var colName = col["mData"];
                             if (/\./.test(colName))
@@ -279,7 +275,6 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                         dtColumns.push(column);
                     });
                     deferred.resolve(dtColumns);
-                    //$scope.dtColumns = dtColumns;
                 }
                 else {
                     deferred.reject('Failed to get model view.');
