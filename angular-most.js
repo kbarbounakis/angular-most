@@ -117,8 +117,6 @@ TextUtils.format = function(f) {
 function Args() {
     //
 }
-
-var jQuery = this.jQuery, angular = this.angular;
 /**
  * Checks the expression and throws an exception if the condition is not met.
  * @param {*} expr
