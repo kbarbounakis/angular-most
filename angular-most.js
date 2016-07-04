@@ -3186,7 +3186,7 @@ function MostTypeaheadDirective($compile, $svc) {
                 var typeaheadAttr = angular.format('%s as x.%s for x in %s($viewValue)',value, field, dataName);
                 var limit = parseInt(iAttrs['limit']) || 10;
                 //set typeahead attribute
-                $input.attr("typeahead", typeaheadAttr);
+                $input.attr("uib-typeahead", typeaheadAttr);
                 //set typeahead-on-select attribute
                 if (iAttrs['onselect']) {
                     $input.attr("typeahead-on-select", iAttrs['onselect']);
