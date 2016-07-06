@@ -807,6 +807,14 @@ ClientDataModel.prototype.where = function(attr) {
     return this.asQueryable().where(attr);
 };
 
+    /**
+     * @param {string} text
+     * @returns {ClientDataQueryable}
+     */
+    ClientDataModel.prototype.where = function(text) {
+        return this.asQueryable().search(text);
+    };
+
 /**
  * @returns {Promise|*}
  */
@@ -2111,6 +2119,17 @@ ClientDataQueryable.prototype.where = function(name) {
     this.privates_.left = name;
     return this;
 };
+
+
+    /**
+     * @param {string} text
+     * @returns ClientDataQueryable
+     */
+    ClientDataQueryable.prototype.search = function(text) {
+        this.$search = text;
+        delete self.privates_.lop;delete self.privates_.left; delete self.privates_.op; delete self.privates_.right;
+        return this;
+    };
 
 /**
  * @param {string=} name
