@@ -811,7 +811,7 @@ ClientDataModel.prototype.where = function(attr) {
      * @param {string} text
      * @returns {ClientDataQueryable}
      */
-    ClientDataModel.prototype.where = function(text) {
+    ClientDataModel.prototype.search = function(text) {
         return this.asQueryable().search(text);
     };
 
@@ -3443,7 +3443,7 @@ function MostDataInstanceDirective($svc, $parse) {
 }
 
 
-function MostFloatDirective() {
+function MostFloatDirective($filter) {
     return {
         priority:401,
         require: 'ngModel',
@@ -3464,6 +3464,9 @@ function MostFloatDirective() {
                     ctrl.$setValidity('float', false);
                     return undefined;
                 }
+            });
+            ctrl.$formatters.unshift(function(value) {
+                return $filter('number')(value);
             });
         }
     };
