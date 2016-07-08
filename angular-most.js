@@ -2158,7 +2158,7 @@ ClientDataQueryable.prototype.or = function(name) {
  * @returns ClientDataQueryable
  */
 ClientDataQueryable.prototype.equal = function(value) {
-    this.privates_.op = Array.isArray(value) ? 'eq' : 'eq';
+    this.privates_.op = Array.isArray(value) ? 'in' : 'eq';
     this.privates_.right = value; return this.append();
 };
 
@@ -3251,7 +3251,7 @@ function MostDataInstanceDirective($svc, $parse) {
             var q = new ClientDataQueryable(scope.model), arr = [];
             q.service = $svc;
             if (angular.isNotEmptyString(scope.url)) {
-                q.url(scope.url);
+                q.setUrl(scope.url);
             }
             //apply select (if any)
             if (scope.select)
