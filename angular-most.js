@@ -760,6 +760,17 @@ ClientDataModel.prototype.asQueryable = function() {
     return new ClientDataQueryable(this.getName(), this.getService());
 };
 
+
+    /**
+     * Sets the number of levels of the expandable attributes.
+     * @param {number=} value
+     * @returns {ClientDataQueryable|*}
+     */
+    ClientDataModel.prototype.levels = function(value) {
+        var result = new ClientDataQueryable(this.getName(), this.getService());
+        return result.levels(value);
+    };
+
 /**
  * Inserts or updates the given object or array of objects
  * @param {*} obj
@@ -2379,6 +2390,24 @@ ClientDataQueryable.prototype.concat = function(s0) {
     this.privates_.left = res;
     return this;
 };
+
+
+    /**
+     * Sets the number of levels of the expandable attributes.
+     * @param {number=} value
+     * @returns {ClientDataQueryable}
+     */
+    ClientDataQueryable.prototype.levels = function(value) {
+        if (typeof value === 'number')
+            /**
+             * @private
+             * @type {boolean}
+             */
+            this.$levels = value;
+        else
+            throw new Error("Expandable levels must a number");
+        return this;
+    };
 
 
 function QueryableController($scope, $svc)
