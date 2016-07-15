@@ -1936,6 +1936,29 @@ ClientDataQueryable.prototype.expand = function(attr) {
 };
 
 
+    /**
+     * Converts a ClientDataQueryable instance to a string which is going to be used as parameter in ClientDataQueryable.expand() method
+     *  @param {String} attr - A string which represents the attribute of a model which is going to be expanded with the options specified in this instance of ClientDataQueryable.
+     */
+    ClientDataQueryable.prototype.toExpand = function(attr) {
+        Args.notEmpty(attr,'Expandable attribute');
+        var params = this.getParams(), s = "";
+        for(var key in params) {
+            if (params.hasOwnProperty(key)) {
+                if (typeof params[key] !== 'undefined' && params[key] != null) {
+                    s += ";" + key + "=" + params[key];
+                }
+            }
+        }
+        if (s.length>0) {
+            return attr + "(" + s.substr(1) + ")"
+        }
+        else {
+            return attr;
+        }
+    };
+
+
 /**
  * @param {String} s
  */
