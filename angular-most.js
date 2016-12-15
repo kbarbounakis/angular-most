@@ -744,7 +744,7 @@ ClientDataModel.prototype.schema = function() {
         $q = $injector.get("$q"),
         deferred = $q.defer();
     setTimeout(function() {
-        self.getService().schema(this.getName(), function(err, result) {
+        self.getService().schema(self.getName(), function(err, result) {
             if (err) { return deferred.reject(err); }
             return deferred.resolve(result);
         });

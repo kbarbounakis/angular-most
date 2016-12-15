@@ -1,6 +1,6 @@
 {
     "name": "angular-most",
-    "version": "0.1.27",
+    "version": "0.1.28",
     "description": "MOST Web Framework AngularJS client module",
     "main": "angular-most.js",
     "scripts": {
