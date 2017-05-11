@@ -29,6 +29,10 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+if (typeof module !== 'undefined' && module && module.exports) {
+    module.exports = 'most';
+}
+
 (function(window, angular) {
 
 // Create Base64 Object
@@ -147,7 +151,7 @@ Args.check = function(expr, message) {
  * @param {string} name
  */
 Args.notNull = function(arg,name) {
-    if (typeof arg === 'undefined' || arg == null) {
+    if (typeof arg === 'undefined' || arg === null) {
         var err = new Error(name + " may not be null or undefined");
         err.code = "ENULL";
         throw err;
@@ -196,7 +200,7 @@ Args.notNumber = function(arg, name) {
 Args.notEmpty = function(arg,name) {
     Args.notNull(arg,name);
     Args.notString(arg,name);
-    if (arg.length == 0) {
+    if (arg.length === 0) {
         var err = new Error(name + " may not be empty");
         err.code = "EEMPTY";
         return err;
@@ -282,7 +286,7 @@ angular.extend(angular, {
         localeSet = localeSet || 'global';
         if (typeof text !== 'string')
             return text;
-        if (text.length == 0)
+        if (text.length === 0)
             return text;
         var locale = window.locales[localeSet];
         if (locale) {
@@ -298,7 +302,7 @@ angular.extend(angular, {
     format: function (f) {
         if (typeof f !== 'string') {
             var objects = [];
-            for (var k = 0; i < arguments.length; k++) {
+            for (var k = 0; k < arguments.length; k++) {
                 objects.push(inspect(arguments[k]));
             }
             return objects.join(' ');
@@ -343,14 +347,14 @@ angular.extend(angular, {
             return 'data=' + encodeURIComponent(object);
         }
         if (angular.isArray(object)) {
-            if (object.length==0)
+            if (object && object.length===0)
                 return  encodeURIComponent(key) + '=';
         }
         for (key in object) {
             if (object.hasOwnProperty(key)) {
                 value = object[ key ];
                 key = prefix ? prefix + '[' + key + ']' : key;
-                if (typeof value==='undefined' || value == null) {
+                if (typeof value==='undefined' || value === null) {
                     value = encodeURIComponent(key) + '=';
                 } else if (value instanceof Date) {
                     value = encodeURIComponent(key) + '=' + encodeURIComponent(ClientDataQueryable.escape(value));
@@ -406,13 +410,13 @@ angular.extend(angular, {
         if ((undefined === value) || (null === value)) {
             return false;
         }
-        return value % 1 == 0;
+        return value % 1 === 0;
     },
     isFloat: function(value) {
         if ((undefined === value) || (null === value)) {
             return false;
         }
-        if (typeof value == 'number') {
+        if (typeof value === 'number') {
             return true;
         }
         return !isNaN(value - 0);
@@ -428,7 +432,7 @@ if (typeof Array.isArray !== 'function') {
 function UrlPropertyDescriptor(obj) {
     return {
         get: function() {
-            if (typeof obj === 'undefined' || obj == null) { return; }
+            if (typeof obj === 'undefined' || obj === null) { return; }
             return (typeof obj.url === 'function') ? obj.url() : (obj.url || obj.$url);
         }
     }
@@ -437,7 +441,7 @@ function UrlPropertyDescriptor(obj) {
 function ModelPropertyDescriptor(obj) {
     return {
         get: function() {
-            if (typeof obj === 'undefined' || obj == null) { return; }
+            if (typeof obj === 'undefined' || obj === null) { return; }
             return (typeof obj.model === 'function') ? obj.model() : (obj.model || obj.$model);
         }
     }
@@ -520,11 +524,11 @@ ClientDataService.prototype.execute = function(options) {
                 url: url_,
                 headers:options.headers,
                 transformResponse:function(data, headers, status) {
-                    if (typeof data === 'undefined' || data == null) {
+                    if (typeof data === 'undefined' || data === null) {
                         return;
                     }
                     if (/^application\/json/.test(headers("Content-Type"))) {
-                        if (data.length == 0) {
+                        if (data.length === 0) {
                             return;
                         }
                         return JSON.parse(data, dateParser);
@@ -895,7 +899,7 @@ function ClientDataContext(service) {
      */
     this.model = function(name) {
         return new ClientDataModel(name, service);
-    }
+    };
     /**
      * @returns {ClientDataService}
      */
@@ -931,244 +935,6 @@ ClientDataContext.prototype.authenticate = function(username,password) {
 
 
 
-/**
- * @class
- * @deprecated MostDataField class is deprecated and it will be removed at the next major update
- * @param name
- * @constructor
- */
-function MostDataField(name) {
-    if (typeof name !== 'string') {
-        throw new Error('Invalid argument type. Expected string.')
-    }
-    this.name = name;
-}
-
-/**
- * @returns {MostDataField}
- */
-MostDataField.prototype.as = function(s) {
-    if (typeof s === 'undefined' || s==null) {
-        delete this.$as;
-        return this;
-    }
-    this.$as = s;
-    return this;
-};
-
-/**
- * Returns the alias expression, if any.
- * @returns {string}
- * @private
- */
-MostDataField.prototype._as = function() {
-    return angular.isNotEmptyString(this.$as) ? ' as ' + this.$as : '';
-};
-
-MostDataField.prototype.toString = function() {
-    return this.name + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.max = function() {
-    return String.prototype.format('max(%s)', this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.min = function() {
-    return String.prototype.format('min(%s)', this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.count = function() {
-    return String.prototype.format('count(%s)', this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.average = function() {
-    return String.prototype.format('avg(%s)', this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.length = function() {
-    return String.prototype.format('length(%s)', this.name) + this._as();
-};
-
-/**
- * @param {String} s
- * @returns {string}
- */
-MostDataField.prototype.indexOf = function(s) {
-    return String.prototype.format('indexof(%s,%s)', this.name, ClientDataQueryable.escape(s)) + this._as();
-};
-
-/**
- * @param {number} pos
- * @param {number} length
- * @returns {string}
- */
-MostDataField.prototype.substr = function(pos, length) {
-    return String.prototype.format('substring(%s,%s,%s)',this.name, pos, length) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.floor = function() {
-    return String.prototype.format('floor(%s)',this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.round = function() {
-    return String.prototype.format('round(%s)',this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.getYear = function() {
-    return String.prototype.format('year(%s)',this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.getDay = function() {
-    return String.prototype.format('day(%s)',this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.getMonth = function() {
-    return String.prototype.format('month(%s)',this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.getMinutes = function() {
-    return String.prototype.format('minute(%s)',this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.getHours = function() {
-    return String.prototype.format('hour(%s)',this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.getSeconds = function() {
-    return String.prototype.format('second(%s)',this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.getDate = function() {
-    return String.prototype.format('date(%s)',this.name) + this._as();
-};
-
-///**
-// * @returns {string}
-// */
-//MostDataField.prototype.ceil = function() {
-//    return String.prototype.format('ceil(%s)',this.name);
-//};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.toLocaleLowerCase = function() {
-    return String.prototype.format('tolower(%s)',this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.toLowerCase = function() {
-    return String.prototype.format('tolower(%s)',this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.toLocaleUpperCase = function() {
-    return String.prototype.format('toupper(%s)',this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.toUpperCase = function() {
-    return String.prototype.format('toupper(%s)',this.name) + this._as();
-};
-
-/**
- * @returns {string}
- */
-MostDataField.prototype.trim = function() {
-    return String.prototype.format('trim(%s)',this.name) + this._as();
-};
-
-/**
- * @param {*} s0
- * @returns {string}
- */
-MostDataField.prototype.concat = function(s0) {
-    var res = 'concat(' + this.name;
-    for (var i = 0; i < arguments.length; i++) {
-        res += ',' + ClientDataQueryable.escape(s);
-    }
-    res += ')';
-    return res;
-};
-
-/**
- * @param {*} s
- * @returns {string}
- */
-MostDataField.prototype.endsWith = function(s) {
-    return String.prototype.format('endswith(%s,%s)',this.name, ClientDataQueryable.escape(s)) + this._as();
-};
-
-/**
- * @param {*} s
- * @returns {string}
- */
-MostDataField.prototype.startsWith = function(s) {
-    return String.prototype.format('startswith(%s,%s)',this.name, ClientDataQueryable.escape(s)) + this._as();
-};
-
-if (typeof String.prototype.fieldOf === 'undefined')
-{
-    /**
-     * @deprecated This method is deprecated and it will be removed at the next major update
-     * @returns {MostDataField}
-     */
-    var fieldOf = function() {
-        if (this == null) {
-            throw new TypeError('String.prototype.fieldOf called on null or undefined');
-        }
-        return new MostDataField(this);
-    };
-    if (!String.prototype.fieldOf) { String.prototype.fieldOf = fieldOf; }
-}
 
 if (typeof String.prototype.format === 'undefined')
 {
@@ -1212,200 +978,6 @@ if (typeof String.prototype.format === 'undefined')
     };
     if (!String.prototype.format) { String.prototype.format = format; }
 }
-
-/**
- * @deprecated FieldSelector class is deprecated and it will be removed at the next major update
- * @class
- * @param {string} name
- * @constructor
- */
-function FieldSelector(name) {
-    this.name = name;
-}
-/**
- * @param {string} name
- * @returns {FieldSelector}
- */
-FieldSelector.select = function(name) {
-    return new FieldSelector(name);
-};
-
-/**
- * @param {string} name
- * @returns {FieldSelector}
- */
-FieldSelector.count = function(name) {
-    return new FieldSelector(String.format("count(%s)", name));
-};
-
-/**
- * @param {string} name
- * @returns {FieldSelector}
- */
-FieldSelector.sum = function(name) {
-    return new FieldSelector(String.format("sum(%s)", name));
-};
-
-/**
- * @param {string} name
- * @returns {FieldSelector}
- */
-FieldSelector.max = function(name) {
-    return new FieldSelector(String.format("max(%s)", name));
-};
-
-/**
- * @param {string} name
- * @returns {FieldSelector}
- */
-FieldSelector.min = function(name) {
-    return new FieldSelector(String.format("min(%s)", name));
-};
-
-/**
- * @param {string} name
- * @returns {FieldSelector}
- */
-FieldSelector.average = function(name) {
-    return new FieldSelector(String.format("avg(%s)", name));
-};
-
-/**
- * @param {string} name
- * @returns {FieldSelector}
- */
-FieldSelector.date = function(name) {
-    return new FieldSelector(String.format("date(%s)", name));
-};
-
-/**
- * @returns {FieldSelector}
- */
-FieldSelector.prototype.getFullYear = function() {
-    this.name = String.format("year(%s)", this.name);
-    return this;
-};
-
-/**
- * @returns {FieldSelector}
- */
-FieldSelector.prototype.getDay = function() {
-    this.name = String.format("day(%s)", this.name);
-    return this;
-};
-
-/**
- * @returns {FieldSelector}
- */
-FieldSelector.prototype.getMonth = function() {
-    this.name = String.format("month(%s)", this.name);
-    return this;
-};
-
-/**
- * @returns {FieldSelector}
- */
-FieldSelector.prototype.getHours = function() {
-    this.name = String.format("hour(%s)", this.name);
-    return this;
-};
-
-/**
- * @returns {FieldSelector}
- */
-FieldSelector.prototype.getMinutes = function() {
-    this.name = String.format("minute(%s)", this.name);
-    return this;
-};
-
-/**
- * @returns {FieldSelector}
- */
-FieldSelector.prototype.getSeconds = function() {
-    this.name = String.format("second(%s)", this.name);
-    return this;
-};
-
-/**
- * @returns {FieldSelector}
- */
-FieldSelector.prototype.length = function() {
-    this.name = String.format("length(%s)", this.name);
-    return this;
-};
-
-/**
- * @returns {FieldSelector}
- */
-FieldSelector.prototype.floor = function() {
-    this.name = String.format("floor(%s)", this.name);
-    return this;
-};
-
-/**
- * @returns {FieldSelector}
- */
-FieldSelector.prototype.round = function() {
-    this.name = String.format("round(%s)", this.name);
-    return this;
-};
-
-/**
- * @returns {FieldSelector}
- */
-FieldSelector.prototype.toLocaleLowerCase = function() {
-    this.name = String.format("tolower(%s)", this.name);
-    return this;
-};
-
-/**
- * @returns {FieldSelector}
- */
-FieldSelector.prototype.toLocaleUpperCase = function() {
-    this.name = String.format("toupper(%s)", this.name);
-    return this;
-};
-
-
-/**
- * @param {string} alias
- */
-FieldSelector.prototype.as = function(alias) {
-    this.as = alias;
-};
-
-/**
- * @returns {string}
- */
-FieldSelector.prototype.toString = function() {
-    if (this.as) {
-        return this.name + " as " + this.as;
-    }
-    else {
-        return this.name;
-    }
-};
-
-/**
- * @deprecated FieldExpression class is deprecated and it will be removed at the next major update
- * @param {string} expr
- * @constructor
- */
-function FieldExpression(expr) {
-    this.expr = expr;
-}
-
-FieldExpression.prototype.toString = function() {
-    return this.expr;
-};
-
-/**
- * @param {string} expr
- * @returns {FieldExpression}
- */
-FieldExpression.create = function(expr) {
-    return new FieldExpression(expr);
-};
 
 /**
  * @param {string} model - The target model
@@ -1611,6 +1183,35 @@ ClientDataQueryable.prototype.getItem = function() {
     return deferred.promise;
 };
 
+    /**
+     * @returns {Promise|*}
+     */
+    ClientDataQueryable.prototype.getValue = function() {
+        var self = this,
+            deferred = self.service.$q.defer();
+        setTimeout(function() {
+            var copy = self.first().getParams();
+            self.service.execute({
+                method: "GET",
+                url: self.getUrl(),
+                data: copy
+            }).then(function(result) {
+                if (typeof result[0] !== 'undefined') {
+                    for (var key in result[0]) {
+                        if (result[0].hasOwnProperty(key)) {
+                            return deferred.resolve(result[0][key]);
+                        }
+                    }
+                }
+                return deferred.resolve();
+            }).catch(function(err) {
+                console.log(err);
+                deferred.reject(err);
+            });
+        }, 0);
+        return deferred.promise;
+    };
+
 ClientDataQueryable.prototype.reset = function() {
     this.items = (function(){})(); this.item=(function(){})();
     return this;
@@ -1623,7 +1224,7 @@ ClientDataQueryable.prototype.reset = function() {
 ClientDataQueryable.prototype.copy = function() {
     var self = this, result = new ClientDataQueryable();
     var keys = Object.keys(this);
-    keys.forEach(function(key) { if (key.indexOf('$')==0) {
+    keys.forEach(function(key) { if (key.indexOf('$')===0) {
         result[key] = self[key];
     }
     });
@@ -1648,8 +1249,8 @@ ClientDataQueryable.prototype.getParams = function() {
     var self = this, result = { };
     var keys = Object.keys(this);
     keys.forEach(function(key) {
-        if (key.indexOf('$')==0) {
-            if ((typeof self[key] !== 'undefined') && (self[key] != null))
+        if (key.indexOf('$')===0) {
+            if ((typeof self[key] !== 'undefined') && (self[key] !== null))
                 result[key] = self[key];
         }
     });
@@ -1740,7 +1341,7 @@ ClientDataQueryable.prototype.append = function() {
     if (self.privates_.left) {
         var expr = null;
 
-        if (self.privates_.op=='in') {
+        if (self.privates_.op==='in') {
             if (Array.isArray(self.privates_.right)) {
                 //expand values
                 exprs = [];
@@ -1751,7 +1352,7 @@ ClientDataQueryable.prototype.append = function() {
                     expr = '(' + exprs.join(' or ') + ')';
             }
         }
-        else if (self.privates_.op=='nin') {
+        else if (self.privates_.op==='nin') {
             if (Array.isArray(self.privates_.right)) {
                 //expand values
                 exprs = [];
@@ -1765,12 +1366,12 @@ ClientDataQueryable.prototype.append = function() {
         else
             expr = self.privates_.left + ' ' + self.privates_.op + ' ' + ClientDataQueryable.escape(self.privates_.right);
         if (expr) {
-            if (typeof self.$filter === 'undefined' || self.$filter == null)
+            if (typeof self.$filter === 'undefined' || self.$filter === null)
                 self.$filter = expr;
             else {
                 self.privates_.lop = self.privates_.lop || 'and';
                 self.privates_._lop = self.privates_._lop || self.privates_.lop;
-                if (self.privates_._lop == self.privates_.lop)
+                if (self.privates_._lop === self.privates_.lop)
                     self.$filter = self.$filter + ' ' + self.privates_.lop + ' ' + expr;
                 else
                     self.$filter = '(' + self.$filter + ') ' + self.privates_.lop + ' ' + expr;
@@ -1836,13 +1437,13 @@ ClientDataQueryable.prototype.asArray = function(value) {
 };
 
 /**
- * @param {string|FieldSelector...} attr
+ * @param {string...} attr
  * @returns ClientDataQueryable
  */
 ClientDataQueryable.prototype.select = function(attr) {
     var arr = [];
     delete this.$select;
-    if (typeof attr === 'undefined' || attr == null) { return this; }
+    if (typeof attr === 'undefined' || attr === null) { return this; }
     //backward compatibility (version <1.20)
     if (attr instanceof Array) {
         return ClientDataQueryable.prototype.select.apply(this, attr);
@@ -1851,8 +1452,6 @@ ClientDataQueryable.prototype.select = function(attr) {
     for (var i = 0; i < arg.length; i++) {
         if (typeof arg[i] === 'string')
             arr.push(arg[i]);
-        else if (arg[i] instanceof FieldSelector)
-            arr.push(arg[i].toString());
         else
             throw new Error("Invalid argument. Expected string.");
     }
@@ -1867,13 +1466,13 @@ ClientDataQueryable.prototype.select = function(attr) {
 };
 
 /**
- * @param {string|FieldSelector...} attr
+ * @param {string...} attr
  * @returns ClientDataQueryable
  */
 ClientDataQueryable.prototype.groupBy = function(attr) {
     var arr = [];
     delete this.$groupby;
-    if (typeof attr === 'undefined' || attr == null) { return this; }
+    if (typeof attr === 'undefined' || attr === null) { return this; }
     //backward compatibility (version <1.20)
     if (attr instanceof Array) {
         return ClientDataQueryable.prototype.groupBy.apply(this, attr);
@@ -1882,8 +1481,6 @@ ClientDataQueryable.prototype.groupBy = function(attr) {
     for (var i = 0; i < arg.length; i++) {
         if (typeof arg[i] === 'string')
             arr.push(arg[i]);
-        else if (arg[i] instanceof FieldSelector)
-            arr.push(arg[i].toString());
         else
             throw new Error("Invalid argument. Expected string.");
     }
@@ -1898,7 +1495,7 @@ ClientDataQueryable.prototype.groupBy = function(attr) {
 };
 
 /**
- * @param {string|FieldSelector...} attr
+ * @param {string...} attr
  * @returns ClientDataQueryable
  * @deprecated This method is deprecated and will be removed. Use ClientDataQueryable.groupBy() instead.
  */
@@ -1913,7 +1510,7 @@ ClientDataQueryable.prototype.group = function(attr) {
 ClientDataQueryable.prototype.expand = function(attr) {
     var arr = [];
     delete this.$expand;
-    if (typeof attr === 'undefined' || attr == null) { return this; }
+    if (typeof attr === 'undefined' || attr === null) { return this; }
     //backward compatibility (version <1.20)
     if (attr instanceof Array) {
         return ClientDataQueryable.prototype.expand.apply(this, attr);
@@ -1945,7 +1542,7 @@ ClientDataQueryable.prototype.expand = function(attr) {
         var params = this.getParams(), s = "";
         for(var key in params) {
             if (params.hasOwnProperty(key)) {
-                if (typeof params[key] !== 'undefined' && params[key] != null) {
+                if (typeof params[key] !== 'undefined' && params[key] !== null) {
                     s += ";" + key + "=" + params[key];
                 }
             }
@@ -1970,7 +1567,7 @@ ClientDataQueryable.prototype.filter = function(s) {
     delete p.left; delete p.right; delete p.op; delete p.lop; delete p._lop;
     if (typeof s !== 'string')
         return this;
-    if (s.length==0)
+    if (s.length===0)
         return this;
     //set filter
     this.$filter = s;
@@ -1996,7 +1593,7 @@ ClientDataQueryable.prototype.prepare = function() {
 
 
 ClientDataQueryable.prototype.toFilter = function() {
-    if (typeof this.$filter !== 'undefined' && this.$filter != null) {
+    if (typeof this.$filter !== 'undefined' && this.$filter !== null) {
         if (typeof this.$prepared === 'undefined' || this.$prepared === null) {
             return this.$filter;
         }
@@ -2004,7 +1601,7 @@ ClientDataQueryable.prototype.toFilter = function() {
             return angular.format('(%s) and (%s)', this.$prepared, this.$filter);
         }
     }
-    else if(typeof this.$prepared !== 'undefined' && this.$prepared != null) {
+    else if(typeof this.$prepared !== 'undefined' && this.$prepared !== null) {
         return this.$prepared;
     }
 };
@@ -2099,11 +1696,11 @@ ClientDataQueryable.prototype.skip = function(val) {
 };
 
 /**
- * @param {string|FieldSelector} name
+ * @param {string} name
  * @returns ClientDataQueryable
  */
 ClientDataQueryable.prototype.orderBy = function(name) {
-    if (typeof name !=='undefined' || name!=null)
+    if (typeof name !=='undefined' || name!==null)
         /**
          * @private
          * @type {string}
@@ -2113,32 +1710,32 @@ ClientDataQueryable.prototype.orderBy = function(name) {
 };
 
 /**
- * @param {string|FieldSelector} name
+ * @param {string} name
  * @returns ClientDataQueryable
  */
 ClientDataQueryable.prototype.orderByDescending = function(name) {
-    if (typeof name !=='undefined' || name!=null)
+    if (typeof name !=='undefined' || name!==null)
         this.$orderby = name.toString() + ' desc';
     return this;
 };
 
 /**
- * @param {string|FieldSelector} name
+ * @param {string} name
  * @returns ClientDataQueryable
  */
 ClientDataQueryable.prototype.thenBy = function(name) {
-    if (typeof name !=='undefined' || name!=null) {
+    if (typeof name !=='undefined' || name!==null) {
         this.$orderby += (this.$orderby ? ',' + name.toString() : name.toString());
     }
     return this;
 };
 
 /**
- * @param {string|FieldSelector} name
+ * @param {string} name
  * @returns ClientDataQueryable
  */
 ClientDataQueryable.prototype.thenByDescending = function(name) {
-    if (typeof name !=='undefined' || name!=null) {
+    if (typeof name !=='undefined' || name!==null) {
         this.$orderby += (this.$orderby ? ',' + name.toString() : name.toString()) + ' desc';
     }
     return this;
@@ -2161,7 +1758,7 @@ ClientDataQueryable.prototype.where = function(name) {
      */
     ClientDataQueryable.prototype.search = function(text) {
         this.$search = text;
-        delete self.privates_.lop;delete self.privates_.left; delete self.privates_.op; delete self.privates_.right;
+        delete this.privates_.lop;delete this.privates_.left; delete this.privates_.op; delete this.privates_.right;
         return this;
     };
 
@@ -2194,15 +1791,6 @@ ClientDataQueryable.prototype.or = function(name) {
 ClientDataQueryable.prototype.equal = function(value) {
     this.privates_.op = Array.isArray(value) ? 'in' : 'eq';
     this.privates_.right = value; return this.append();
-};
-
-/**
- * @param name
- * @returns {{$name: *}}
- * @deprecated This function is deprecated. Use FieldSelector.create() instead.
- */
-ClientDataQueryable.prototype.field = function(name) {
-    return { "$name":name }
 };
 
 /**
@@ -2554,7 +2142,7 @@ function CommonController($scope, $q, $location, $window, $shared) {
             }
             else if (typeof $scope.client.route.r !== 'undefined') {
                 var url = $window.location.search ? $window.location.pathname.concat('?', $window.location.search) : $window.location.pathname;
-                $window.location.href = $scope.client.route.r == '/' ? url : $scope.client.route.r;
+                $window.location.href = $scope.client.route.r === '/' ? url : $scope.client.route.r;
             }
             else if ($scope.$root.referrer) {
                 //redirect to $location.path
@@ -2617,16 +2205,16 @@ function DataController($scope, $q, $location, $svc, $window, $shared)
         //register for item.new event
         $scope.$on('item.new', function(event, args) {
             args = args || {};
-                if (args.model==$scope.model) { $scope.reloadData(); }
+                if (args.model===$scope.model) { $scope.reloadData(); }
         });
         //register for item.delete event
         $scope.$on('item.delete', function(event, args) {
             args = args || {};
-            if (args.model==$scope.model) { $scope.reloadData(); }
+            if (args.model===$scope.model) { $scope.reloadData(); }
         });
         $scope.$on('item.save', function(event, args) {
             args = args || {};
-            if (args.model==$scope.model) { $scope.reloadData(); }
+            if (args.model===$scope.model) { $scope.reloadData(); }
         });
     }
 
@@ -2736,7 +2324,7 @@ function MostSharedService($rootScope, $location, $injector)
 
         var locationPath =$location.url();
         self.$root.paths.filter(function(x) { return x.active; }).forEach(function(x) { x.active=false; });
-        var ix = self.$root.paths.findIndex(function(x) { return x.href == locationPath; });
+        var ix = self.$root.paths.findIndex(function(x) { return x.href === locationPath; });
         if (ix>=0) {
             self.$root.paths.splice(ix+1);
             self.$root.paths[ix].active = true;
@@ -2794,7 +2382,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared)
     $scope.$watch('item', function(value) {
         if (angular.isDefined($scope.state) && angular.isDefined($scope.model)) {
             //if state is new
-            if ($scope.state=='new') {
+            if ($scope.state==='new') {
                 //validate item
                 $scope.item = $scope.item || {};
                 //get model schema
@@ -2807,7 +2395,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared)
                         params[key]=$scope.client.route[key];
                     //append server route params
                     for(var key in $scope.server.route) {
-                        if ($scope.server.route.hasOwnProperty(key) && params.hasOwnProperty(key)==false)
+                        if ($scope.server.route.hasOwnProperty(key) && params.hasOwnProperty(key)===false)
                             params[key]=$scope.server.route[key];
                     }
 
@@ -2853,7 +2441,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared)
                     for(var key in params) {
                         if (params.hasOwnProperty(key)) {
                             //check if this property belongs to target schema
-                            var attr = schema.attributes.filter(function(x) { return (x.name==key) || (x.property==key); })[0];
+                            var attr = schema.attributes.filter(function(x) { return (x.name===key) || (x.property===key); })[0];
                             if (attr && !attr.primary) {
                                 var value = params[key];
                                 if (!angular.isDefined($scope.item[key])) {
@@ -2894,13 +2482,13 @@ function ItemController($scope, $q, $location, $svc, $window, $shared)
     $scope.route = $window.route;
     //load item
     $scope.$watch('id', function(newValue, oldValue) {
-        if ($scope.state=='new')
+        if ($scope.state==='new')
             return;
         if (!angular.isDefined(newValue)) {
             $scope.item = null;
             return;
         }
-        if (newValue!==oldValue ||  $scope.item==null) {
+        if (newValue!==oldValue ||  $scope.item===null) {
             var q = new ClientDataQueryable();
             q.service = $svc;
             //todo::load current model
@@ -2922,7 +2510,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared)
         }
          else if (typeof $scope.client.route.r !== 'undefined') {
              var url = $window.location.search ? $window.location.pathname.concat('?', $window.location.search) : $window.location.pathname;
-             $window.location.href = $scope.client.route.r == '/' ? url : $scope.client.route.r;
+             $window.location.href = $scope.client.route.r === '/' ? url : $scope.client.route.r;
          }
         else if ($scope.$root.referrer) {
             //redirect to $location.path
@@ -2965,7 +2553,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared)
                 if ($shared) {
                     $shared.broadcast('item.delete', { model:$scope.model, data:item });
                 }
-                if ($scope.redirection==false)
+                if ($scope.redirection===false)
                     return;
                 //if current scope has a return url
                 var returnURL = $scope["returnUrl"] || $scope["return"];
@@ -3009,7 +2597,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared)
                     $shared.broadcast('item.'.concat($scope.state), { model:$scope.model, data:result });
                 }
 
-                if ($scope.redirection==false)
+                if ($scope.redirection===false)
                     return;
 
                 /**
@@ -3025,7 +2613,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared)
                 }
                 else if (typeof $scope.client.route.r !== 'undefined') {
                     var url =  $window.location.search ? $window.location.pathname.concat('?', $window.location.search) : $window.location.pathname;
-                    $window.location.href = $scope.client.route.r=='/' ? url : $scope.client.route.r;
+                    $window.location.href = $scope.client.route.r==='/' ? url : $scope.client.route.r;
                 }
                 else {
                     //otherwise
@@ -3045,7 +2633,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared)
                         }
                         else {
                             //find prev if any
-                            var ix = $scope.$root.paths.findIndex(function(x) { return x.href == $location.path(); });
+                            var ix = $scope.$root.paths.findIndex(function(x) { return x.href === $location.path(); });
                             if (ix>0 && ix>=$scope.$root.paths.length-1) {
                                 var prevUrl=$scope.$root.paths[ix - 1].href;
                                 //remove items after index
@@ -3158,7 +2746,7 @@ function MostParamDirective($window) {
                 var params = { };
                 for (var i = 0; i < values.length; i++) {
                     var value = values[i].split('=');
-                    if (value.length==2)
+                    if (value.length===2)
                         params[value[0]] = value[1];
                 }
                 $window.route = $window.route || { };
@@ -3231,7 +2819,8 @@ function MostStringDirective($compile) {
 function MostTypeaheadDirective($compile, $svc) {
     return {
         restrict: 'E',
-        template:'<div><label loc-html></label><input autocomplete="off"  typeahead-editable="false" type="text" class="form-control"/></div>',
+        scope: { ngModel : '=' },
+        template:'<div><label loc-html></label><input autocomplete="off" ng-model="ngModel" typeahead-editable="false" type="text" class="form-control"/></div>',
         replace:true,
         compile: function compile() {
             return function (scope, iElement, iAttrs) {
@@ -3379,9 +2968,9 @@ function MostDataInstanceDirective($svc, $parse) {
                 if (getter)
                     setter = getter.assign;
                 if (typeof setter === 'function') {
-                    setter(scope.$parent, (q.$top == 1) ? result[0] : result);
+                    setter(scope.$parent, (q.$top === 1) ? result[0] : result);
                 }
-                //scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
+                //scope.$parent[attrs.name] = (q.$top === 1) ? result[0] : result;
             });
 
             //register for order change
@@ -3389,18 +2978,18 @@ function MostDataInstanceDirective($svc, $parse) {
             {
                 if (typeof args === 'string')
                 {
-                    if (args.length==0) {
+                    if (args.length===0) {
                         delete q.$orderby;
                         q.reset().items.then(function(result) {
-                            scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
+                            scope.$parent[attrs.name] = (q.$top === 1) ? result[0] : result;
                         });
                     }
                     else {
                         var orders = args.split(',');
-                        if (orders.length==1) {
+                        if (orders.length===1) {
                             if (typeof q.$orderby !== 'undefined') {
                                 var previousOrders= q.$orderby.split(',');
-                                if (previousOrders.length==1) {
+                                if (previousOrders.length===1) {
                                     var arr1 = orders[0].split(' '), arr2 = previousOrders[0].split(' ');
                                     if (typeof arr1[1] === 'undefined') {
                                         if (arr1[0]===arr2[0]) {
@@ -3419,7 +3008,7 @@ function MostDataInstanceDirective($svc, $parse) {
 
                         }
                         q.reset().orderBy(orders.join(',')).items.then(function(result) {
-                            scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
+                            scope.$parent[attrs.name] = (q.$top === 1) ? result[0] : result;
                         });
                     }
                 }
@@ -3429,17 +3018,17 @@ function MostDataInstanceDirective($svc, $parse) {
             scope.$on('filter.change', function(event, args)
             {
                 if (typeof args === 'object') {
-                    if (args.name==attrs.name) {
+                    if (args.name===attrs.name) {
                         if (typeof args.filter === 'string') {
                             q.reset().filter(args.filter).items.then(function(result) {
-                                scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
+                                scope.$parent[attrs.name] = (q.$top === 1) ? result[0] : result;
                             });
                         }
                     }
                 }
                 else if (typeof args === 'string') {
                     q.reset().filter(args).items.then(function(result) {
-                        scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
+                        scope.$parent[attrs.name] = (q.$top === 1) ? result[0] : result;
                     });
                 }
             });
@@ -3448,12 +3037,12 @@ function MostDataInstanceDirective($svc, $parse) {
             scope.$on('page.change', function(event, args)
             {
                 if (typeof args === 'object') {
-                    if (args.name==attrs.name) {
+                    if (args.name===attrs.name) {
                         if (typeof args.page !== 'undefined') {
                             var page = parseInt(args.page), size = parseInt(scope.top);
                             if (size<=0) { return; }
                             q.reset().skip((page-1)*size).items.then(function(result) {
-                                scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
+                                scope.$parent[attrs.name] = (q.$top === 1) ? result[0] : result;
                             });
                         }
                     }
@@ -3463,16 +3052,16 @@ function MostDataInstanceDirective($svc, $parse) {
             var dataReload = function(event, args)
             {
                 if (typeof args === 'object') {
-                    if (args.name==attrs.name) {
+                    if (args.name===attrs.name) {
                         q.reset().items.then(function(result) {
-                            scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
+                            scope.$parent[attrs.name] = (q.$top === 1) ? result[0] : result;
                         });
                     }
                 }
                 else if (typeof args === 'string') {
                     if (args===attrs.name) {
                         q.reset().items.then(function(result) {
-                            scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
+                            scope.$parent[attrs.name] = (q.$top === 1) ? result[0] : result;
                         });
                     }
                 }
@@ -3481,9 +3070,9 @@ function MostDataInstanceDirective($svc, $parse) {
             var dataRefresh = function(event, args)
             {
                 if (typeof args === 'object') {
-                    if (args.model== q.$model) {
+                    if (args.model=== q.$model) {
                         q.reset().items.then(function(result) {
-                            scope.$parent[attrs.name] = (q.$top == 1) ? result[0] : result;
+                            scope.$parent[attrs.name] = (q.$top === 1) ? result[0] : result;
                         });
                     }
                 }
@@ -3513,7 +3102,7 @@ function MostFloatDirective($filter) {
                     ctrl.$setValidity('float', true);
                     return viewValue;
                 }
-                if (viewValue.length==0) {
+                if (viewValue.length===0) {
                     ctrl.$setValidity('float', true);
                     return viewValue;
                 }
@@ -3540,12 +3129,12 @@ function MostRequiredDirective() {
         require: 'ngModel',
         link: function (scope, elm, attrs, ctrl) {
             ctrl.$parsers.unshift(function (viewValue) {
-                if (typeof viewValue === 'undefined' || viewValue==null) {
+                if (typeof viewValue === 'undefined' || viewValue===null) {
                     ctrl.$setValidity('required', false);
                     return undefined;
                 }
                 if (typeof viewValue === 'string') {
-                    if (viewValue.length==0) {
+                    if (viewValue.length===0) {
                         ctrl.$setValidity('required', false);
                         return undefined;
                     }
@@ -3724,7 +3313,6 @@ if (window) {
     window.ClientDataQueryable = ClientDataQueryable;
     window.ClientDataService = ClientDataService;
     window.ClientDataModel = ClientDataModel;
-    window.MostDataField = MostDataField;
     //export controllers
     window.CommonController = CommonController;
     window.DataController = DataController;
