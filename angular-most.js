@@ -2488,7 +2488,7 @@ function ItemController($scope, $q, $location, $svc, $window, $shared)
             $scope.item = null;
             return;
         }
-        if (newValue!==oldValue ||  $scope.item===null) {
+        if (newValue!==oldValue ||  $scope.item===null ||  typeof $scope.item==='undefined') {
             var q = new ClientDataQueryable();
             q.service = $svc;
             //todo::load current model
