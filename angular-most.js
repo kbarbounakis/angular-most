@@ -250,6 +250,9 @@ angular.extend(angular, {
             }
         });
     },
+    isPromise: function(value) {
+        return angular.isObject(value) && (typeof value.then === 'function');
+    },
     isNotEmptyString: function(value) {
         if (typeof value === 'string') {
             return (value.length>0);
@@ -618,13 +621,15 @@ ClientDataService.prototype.save = function(obj, options, callback) {
     $http.put(this.resolveUrl(url), obj).success(function (data) {
         callback(null, data);
     }).error(function (err, status, headers) {
-        var er;
-        if (headers("X-Status-Description"))
-            er = new Error(headers("X-Status-Description"));
-        else
-            er =new Error(err);
-        er.status = status;
-        callback(er);
+        if (headers("X-Status-Description")) {
+            var error = new Error(headers("X-Status-Description"));
+            error.status = status;
+            return callback(error);
+        }
+        else {
+            err.status = status;
+            return callback(err);
+        }
     });
 };
 
@@ -676,10 +681,15 @@ ClientDataService.prototype.remove = function(item, options, callback) {
     }).success(function (data) {
         callback(null, data);
     }).error(function (err, status, headers) {
-        if (headers("X-Status-Description"))
-            callback(new Error(headers("X-Status-Description")));
-        else
-            callback(new Error(err));
+        if (headers("X-Status-Description")) {
+            var error = new Error(headers("X-Status-Description"));
+            error.status = status;
+            return callback(error);
+        }
+        else {
+            err.status = status;
+            return callback(err);
+        }
     });
 };
 
