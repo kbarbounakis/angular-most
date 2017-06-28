@@ -583,7 +583,19 @@ ClientDataService.prototype.items = function(options, callback) {
     $http({
         method: "GET",
         url: this.resolveUrl(url),
-        params: options
+        params: options,
+        transformResponse:function(data, headers, status) {
+            if (typeof data === 'undefined' || data === null) {
+                return;
+            }
+            if (/^application\/json/.test(headers("Content-Type"))) {
+                if (data.length === 0) {
+                    return;
+                }
+                return JSON.parse(data, dateParser);
+            }
+            return data;
+        }
     }).then(function (response) {
         callback(null, response.data);
     }, function (err) {

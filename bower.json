@@ -1,6 +1,6 @@
 {
   "name": "angular-most",
-  "version": "0.1.31",
+  "version": "0.1.33",
   "main": "./angular-most.js",
   "dependencies": {
     "angular": "^1.5.8"
