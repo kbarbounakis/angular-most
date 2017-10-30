@@ -97,7 +97,7 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                             var colName = col["mData"];
                             if (/\./.test(colName))
                                 colName = col["mData"].replace(/\./g,'/');
-                            filter.push("indexof(" + colName + ",'" + searchFor.value.replace(/'/g, "''") + "') gt 0");
+                            filter.push("indexof(" + colName + ",'" + searchFor.value.replace(/'/g, "''") + "') ge 0");
                         }
 
                     }
