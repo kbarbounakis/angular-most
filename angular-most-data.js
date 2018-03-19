@@ -36,9 +36,7 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                     //set filter and prepare
                     q.$filter = args.filter;
                     q.prepare();
-                    $scope.$apply(function() {
-                        $scope.filter = args.filter;
-                    });
+                    $scope.filter = args.filter;
                     tableInstance.ajax.reload();
                 }
             }
@@ -47,7 +45,7 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
         var dtOptions = DTOptionsBuilder.newOptions().withFnServerData(function(sSource, aoData, fnCallback, oSettings) {
             var skip = aoData[3].value, top = aoData[4].value, 
                 columns  = angular.isArray($scope.dtColumns) ? $scope.dtColumns : $scope.dtColumns.$$state.value;
-            if (aoData[2].value.length==0) {
+            if (aoData[2].value.length===0) {
                 if (order) {
                     if (angular.isArray(order)) {
                         order.forEach(function(order) {
@@ -153,7 +151,7 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                             tableInstance.row(index).data(data);
                             //tableInstance.draw();
                         }
-                    }
+                    };
 
                     if (!/^true$/i.test(oSettings.oInstance.data('auto-select')))
                         return;
@@ -181,6 +179,7 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                 });
             })
             .withPaginationType('full_numbers')
+            .withBootstrap()
             .withOption('lengthMenu',[5,10,25])
             .withOption('bFilter',true)
             .withOption('aaSorting',[])
@@ -206,7 +205,8 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                 deferred.reject('Failed to get table columns.');
             }
             else {
-                $scope.dataView = schema.views.find(function(x) { return x.name==view; }), reAlign = /^left$|^center$|^right$|^justify$/i;
+                $scope.dataView = schema.views.find(function(x) { return x.name===view; });
+                var reAlign = /^left$|^center$|^right$|^justify$/i;
                 if (angular.isObject($scope.dataView)) {
                     var dtColumns = [];
                     dtColumns.name = $scope.dataView.name;
@@ -238,7 +238,7 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                             column.withClass(cssClass.join(' '));
                         }
                         var format = field.format, coltype = field.coltype, href = field.href;
-                        if ((field.type=="Integer") || (field.type=="Number"))
+                        if ((field.type==="Integer") || (field.type==="Number"))
                             column.withOption("defaultContent","0");
                         else
                             column.withOption("defaultContent","-");
@@ -255,7 +255,7 @@ function DataTableBaseController($scope, $q, $filter, DTOptionsBuilder, DTColumn
                         else {
                             if (coltype==='link') {
                                 column.renderWith(function(value, type, row) {
-                                    var row_href = new String(href);
+                                    var row_href = String(href);
                                     if (row_href) {
                                         var re = /\{%(.*?)\}/i;
                                         var match = re.exec(row_href);
@@ -324,5 +324,5 @@ function DataTableVariantController($scope, $q, $filter, DTOptionsBuilder, DTCol
     });
 }
 //controllers
-angular.module('most.data', ['datatables']).controller('DataTableVariantController', DataTableVariantController)
+angular.module('most.data', ['datatables', 'datatables.bootstrap']).controller('DataTableVariantController', DataTableVariantController)
     .controller('DataTableClientController',DataTableClientController);
